@@ -278,7 +278,8 @@ fn test_invalid_position_missing_line() {
 #[test]
 fn test_char_context_without_position() {
     let file = create_test_file(&["a", "b", "c"]);
-    let (_stdout, stderr, code) = run_sel_with_result(&["-n", "5", "2", file.path().to_str().unwrap()]);
+    let (_stdout, stderr, code) =
+        run_sel_with_result(&["-n", "5", "2", file.path().to_str().unwrap()]);
 
     // -n requires a position selector (with colon)
     assert!(code != 0 || stderr.contains("Error") || stderr.contains("position"));

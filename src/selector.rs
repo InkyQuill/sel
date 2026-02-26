@@ -46,10 +46,7 @@ fn merge_ranges(mut ranges: Vec<(usize, usize)>) -> Vec<(usize, usize)> {
 ///
 /// Converts single lines into Range specs where they are contiguous
 /// or adjacent to existing ranges.
-fn merge_lines_with_ranges(
-    lines: Vec<usize>,
-    ranges: Vec<(usize, usize)>,
-) -> Vec<LineSpec> {
+fn merge_lines_with_ranges(lines: Vec<usize>, ranges: Vec<(usize, usize)>) -> Vec<LineSpec> {
     // Collect all "events": start and end of ranges, plus single lines
     // For a single line n, we treat it as a range (n, n)
     let mut all_ranges: Vec<(usize, usize)> = ranges;
@@ -182,9 +179,9 @@ impl LineSpec {
             let start = start.parse::<usize>().map_err(|_| {
                 SelError::InvalidSelector(format!("Invalid range start: '{}'", start))
             })?;
-            let end = end.parse::<usize>().map_err(|_| {
-                SelError::InvalidSelector(format!("Invalid range end: '{}'", end))
-            })?;
+            let end = end
+                .parse::<usize>()
+                .map_err(|_| SelError::InvalidSelector(format!("Invalid range end: '{}'", end)))?;
 
             if start == 0 || end == 0 {
                 return Err(SelError::InvalidSelector(
@@ -201,9 +198,9 @@ impl LineSpec {
 
             Ok(LineSpec::Range(start, end))
         } else {
-            let n = s.parse::<usize>().map_err(|_| {
-                SelError::InvalidSelector(format!("Invalid line number: '{}'", s))
-            })?;
+            let n = s
+                .parse::<usize>()
+                .map_err(|_| SelError::InvalidSelector(format!("Invalid line number: '{}'", s)))?;
 
             if n == 0 {
                 return Err(SelError::InvalidSelector(
@@ -267,10 +264,7 @@ impl Position {
         })?;
 
         let column = col_str.parse::<usize>().map_err(|_| {
-            SelError::InvalidSelector(format!(
-                "Invalid column number in position: '{}'",
-                col_str
-            ))
+            SelError::InvalidSelector(format!("Invalid column number in position: '{}'", col_str))
         })?;
 
         if line == 0 || column == 0 {
@@ -366,10 +360,7 @@ mod tests {
 
     #[test]
     fn normalize_merges_overlapping_ranges() {
-        let sel = Selector::LineNumbers(vec![
-            LineSpec::Range(1, 5),
-            LineSpec::Range(3, 10),
-        ]);
+        let sel = Selector::LineNumbers(vec![LineSpec::Range(1, 5), LineSpec::Range(3, 10)]);
         let normalized = sel.normalize();
         assert_eq!(
             normalized,
@@ -379,10 +370,7 @@ mod tests {
 
     #[test]
     fn normalize_merges_adjacent_ranges() {
-        let sel = Selector::LineNumbers(vec![
-            LineSpec::Range(1, 5),
-            LineSpec::Range(6, 10),
-        ]);
+        let sel = Selector::LineNumbers(vec![LineSpec::Range(1, 5), LineSpec::Range(6, 10)]);
         let normalized = sel.normalize();
         assert_eq!(
             normalized,
@@ -423,10 +411,7 @@ mod tests {
 
     #[test]
     fn normalize_keeps_non_adjacent_ranges_separate() {
-        let sel = Selector::LineNumbers(vec![
-            LineSpec::Range(1, 5),
-            LineSpec::Range(10, 15),
-        ]);
+        let sel = Selector::LineNumbers(vec![LineSpec::Range(1, 5), LineSpec::Range(10, 15)]);
         let normalized = sel.normalize();
         assert_eq!(
             normalized,
@@ -442,10 +427,7 @@ mod tests {
             LineSpec::Single(5),
         ]);
         let normalized = sel.normalize();
-        assert_eq!(
-            normalized,
-            Selector::LineNumbers(vec![LineSpec::Single(5)])
-        );
+        assert_eq!(normalized, Selector::LineNumbers(vec![LineSpec::Single(5)]));
     }
 
     #[test]

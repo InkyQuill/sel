@@ -9,5 +9,5 @@ pub mod output;
 pub mod reader;
 pub mod selector;
 
-pub use error::{SelError, Result};
+pub use error::{Result, SelError};
 pub use selector::{LineSpec, Position, Selector};

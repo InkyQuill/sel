@@ -148,8 +148,8 @@ fn test_multiple_ranges() {
 #[test]
 fn test_complex_comma_selector() {
     let file = create_test_file(&[
-        "l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10",
-        "l11", "l12", "l13", "l14", "l15",
+        "l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10", "l11", "l12", "l13", "l14",
+        "l15",
     ]);
     let output = run_sel(&["1,3-5,10,12-15", file.path().to_str().unwrap()]);
 

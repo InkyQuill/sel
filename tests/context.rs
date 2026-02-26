@@ -75,9 +75,7 @@ fn test_context_zero_lines() {
 
 #[test]
 fn test_context_large_value() {
-    let file = create_test_file(&[
-        "1", "2", "3", "4", "5", "TARGET", "7", "8", "9", "10", "11",
-    ]);
+    let file = create_test_file(&["1", "2", "3", "4", "5", "TARGET", "7", "8", "9", "10", "11"]);
     let output = run_sel(&["-c", "10", "6", file.path().to_str().unwrap()]);
 
     assert!(output.contains("TARGET"));
@@ -85,13 +83,7 @@ fn test_context_large_value() {
 
 #[test]
 fn test_context_multiple_targets() {
-    let file = create_test_file(&[
-        "line1",
-        "TARGET1",
-        "line3",
-        "TARGET2",
-        "line5",
-    ]);
+    let file = create_test_file(&["line1", "TARGET1", "line3", "TARGET2", "line5"]);
     let output = run_sel(&["-c", "1", "2,4", file.path().to_str().unwrap()]);
 
     assert!(output.contains("TARGET1") || output.contains("TARGET2"));
@@ -99,14 +91,7 @@ fn test_context_multiple_targets() {
 
 #[test]
 fn test_context_overlapping() {
-    let file = create_test_file(&[
-        "line1",
-        "line2",
-        "TARGET1",
-        "line4",
-        "TARGET2",
-        "line6",
-    ]);
+    let file = create_test_file(&["line1", "line2", "TARGET1", "line4", "TARGET2", "line6"]);
     let output = run_sel(&["-c", "2", "3,5", file.path().to_str().unwrap()]);
 
     // Overlapping context should not duplicate lines
@@ -116,13 +101,7 @@ fn test_context_overlapping() {
 #[test]
 fn test_context_with_range() {
     let file = create_test_file(&[
-        "before1",
-        "before2",
-        "START",
-        "middle",
-        "END",
-        "after1",
-        "after2",
+        "before1", "before2", "START", "middle", "END", "after1", "after2",
     ]);
     let output = run_sel(&["-c", "1", "3-5", file.path().to_str().unwrap()]);
 
@@ -158,15 +137,7 @@ fn test_context_single_line_range() {
 #[test]
 fn test_context_far_apart_targets() {
     let file = create_test_file(&[
-        "line1",
-        "TARGET1",
-        "line3",
-        "line4",
-        "line5",
-        "line6",
-        "line7",
-        "TARGET2",
-        "line9",
+        "line1", "TARGET1", "line3", "line4", "line5", "line6", "line7", "TARGET2", "line9",
     ]);
     let output = run_sel(&["-c", "1", "2,8", file.path().to_str().unwrap()]);
 
@@ -230,7 +201,12 @@ fn test_context_negative_context_size() {
         let stderr = String::from_utf8_lossy(&out.stderr);
         if out.status.code() != Some(0) {
             // clap produces "unexpected argument" error for negative values
-            assert!(stderr.contains("Error") || stderr.contains("Invalid") || stderr.contains("unexpected") || stderr.contains("digit"));
+            assert!(
+                stderr.contains("Error")
+                    || stderr.contains("Invalid")
+                    || stderr.contains("unexpected")
+                    || stderr.contains("digit")
+            );
         } else {
             // If it succeeded, check output is valid
             assert!(stdout.contains("TARGET") || stdout.is_empty());
@@ -293,14 +269,7 @@ fn test_context_with_special_characters() {
 #[test]
 fn test_context_ordering_preserved() {
     let file = create_test_file(&[
-        "line1",
-        "line2",
-        "line3",
-        "line4",
-        "line5",
-        "line6",
-        "line7",
-        "line8",
+        "line1", "line2", "line3", "line4", "line5", "line6", "line7", "line8",
     ]);
     let output = run_sel(&["-c", "1", "3,6", file.path().to_str().unwrap()]);
 

@@ -123,7 +123,9 @@ fn test_file_not_found() {
     let (_stdout, stderr, code) = run_sel_result(&["1", "/nonexistent/file.txt"]);
 
     assert!(code != 0);
-    assert!(stderr.contains("Error") || stderr.contains("No such file") || stderr.contains("not found"));
+    assert!(
+        stderr.contains("Error") || stderr.contains("No such file") || stderr.contains("not found")
+    );
 }
 
 #[test]

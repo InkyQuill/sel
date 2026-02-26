@@ -1,6 +1,6 @@
 //! Benchmark for large file processing with complex selectors.
 
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
+use criterion::{BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use sel::selector::{LineSpec, Selector};
 
 fn bench_selector_parsing(c: &mut Criterion) {
@@ -12,7 +12,10 @@ fn bench_selector_parsing(c: &mut Criterion) {
         ("small_range", "10-100"),
         ("small_complex", "1,5,10-15,20,25,30-35"),
         ("medium_complex", "1-10,15-20,25-30,35-40,45-50"),
-        ("large_mixed", "1,3,5,7,9,11-20,22,24,26,28,30-40,42,44,46,48,50"),
+        (
+            "large_mixed",
+            "1,3,5,7,9,11-20,22,24,26,28,30-40,42,44,46,48,50",
+        ),
     ];
 
     for (name, selector) in cases {
@@ -29,25 +32,37 @@ fn bench_selector_normalize(c: &mut Criterion) {
 
     let cases: Vec<(&str, Selector)> = vec![
         ("single", Selector::LineNumbers(vec![LineSpec::Single(42)])),
-        ("small_range", Selector::LineNumbers(vec![LineSpec::Range(1, 100)])),
-        ("overlapping", Selector::LineNumbers(vec![
-            LineSpec::Range(1, 50),
-            LineSpec::Range(30, 80),
-            LineSpec::Range(70, 100),
-        ])),
-        ("adjacent", Selector::LineNumbers(vec![
-            LineSpec::Range(1, 10),
-            LineSpec::Single(11),
-            LineSpec::Range(12, 20),
-        ])),
-        ("large_mixed", Selector::LineNumbers(vec![
-            LineSpec::Single(1),
-            LineSpec::Range(3, 10),
-            LineSpec::Single(12),
-            LineSpec::Range(15, 25),
-            LineSpec::Single(27),
-            LineSpec::Range(30, 40),
-        ])),
+        (
+            "small_range",
+            Selector::LineNumbers(vec![LineSpec::Range(1, 100)]),
+        ),
+        (
+            "overlapping",
+            Selector::LineNumbers(vec![
+                LineSpec::Range(1, 50),
+                LineSpec::Range(30, 80),
+                LineSpec::Range(70, 100),
+            ]),
+        ),
+        (
+            "adjacent",
+            Selector::LineNumbers(vec![
+                LineSpec::Range(1, 10),
+                LineSpec::Single(11),
+                LineSpec::Range(12, 20),
+            ]),
+        ),
+        (
+            "large_mixed",
+            Selector::LineNumbers(vec![
+                LineSpec::Single(1),
+                LineSpec::Range(3, 10),
+                LineSpec::Single(12),
+                LineSpec::Range(15, 25),
+                LineSpec::Single(27),
+                LineSpec::Range(30, 40),
+            ]),
+        ),
     ];
 
     for (name, selector) in cases {

@@ -28,7 +28,9 @@ fn run(cli: Cli) -> sel::Result<()> {
     // Get files from CLI
     let files = cli.get_files();
     if files.is_empty() {
-        return Err(sel::SelError::Message("No input files specified".to_string()));
+        return Err(sel::SelError::Message(
+            "No input files specified".to_string(),
+        ));
     }
 
     // Parse selector if provided (not in regex mode)
@@ -88,7 +90,6 @@ fn process_selector<R: std::io::Read, W: std::io::Write>(
     selector: &sel::selector::Selector,
     cli: &Cli,
 ) -> sel::Result<()> {
-
     match selector {
         Selector::All => {
             // Output all lines with line numbers
@@ -202,9 +203,9 @@ fn process_regex_line_context<R: std::io::Read, W: std::io::Write>(
 
         // Check if this line should be shown (target or within context)
         let should_show = is_target
-            || target_lines.iter().any(|&target| {
-                line_no.abs_diff(target) <= context
-            });
+            || target_lines
+                .iter()
+                .any(|&target| line_no.abs_diff(target) <= context);
 
         if should_show {
             if is_target {
@@ -243,7 +244,8 @@ fn process_regex_char_context<R: std::io::Read, W: std::io::Write>(
                 for m in matches {
                     // Create fragment centered on the match
                     let match_center = m.start + (m.end - m.start) / 2;
-                    let fragment = sel::output::Fragment::new(&line, match_center + 1, char_context);
+                    let fragment =
+                        sel::output::Fragment::new(&line, match_center + 1, char_context);
 
                     // Calculate where the match is within the fragment
                     let fragment_start = fragment.start_column.saturating_sub(1);
@@ -255,11 +257,7 @@ fn process_regex_char_context<R: std::io::Read, W: std::io::Write>(
                     let start = match_start_in_fragment.min(frag_len);
                     let end = match_end_in_fragment.min(frag_len);
 
-                    formatter.write_fragment_with_match(
-                        line_no,
-                        &fragment.content,
-                        start..end,
-                    )?;
+                    formatter.write_fragment_with_match(line_no, &fragment.content, start..end)?;
                 }
             }
         }
@@ -300,9 +298,9 @@ fn process_regex_both_contexts<R: std::io::Read, W: std::io::Write>(
         let is_target = target_lines.contains(line_no);
 
         let should_show = is_target
-            || target_lines.iter().any(|&target| {
-                line_no.abs_diff(target) <= line_context
-            });
+            || target_lines
+                .iter()
+                .any(|&target| line_no.abs_diff(target) <= line_context);
 
         if should_show {
             if is_target {
@@ -340,10 +338,8 @@ fn process_regex_both_contexts<R: std::io::Read, W: std::io::Write>(
 
 /// Find all matches of a regex in a string.
 fn find_matches(regex: &regex::Regex, text: &str) -> Option<Vec<std::ops::Range<usize>>> {
-    let matches: Vec<std::ops::Range<usize>> = regex
-        .find_iter(text)
-        .map(|m| m.start()..m.end())
-        .collect();
+    let matches: Vec<std::ops::Range<usize>> =
+        regex.find_iter(text).map(|m| m.start()..m.end()).collect();
 
     if matches.is_empty() {
         None
@@ -500,10 +496,7 @@ fn process_positions_with_context<R: std::io::Read, W: std::io::Write>(
     // Build a map from line number to positions for O(log n) lookup
     let mut positions_by_line: BTreeMap<usize, Vec<&sel::selector::Position>> = BTreeMap::new();
     for pos in positions {
-        positions_by_line
-            .entry(pos.line)
-            .or_default()
-            .push(pos);
+        positions_by_line.entry(pos.line).or_default().push(pos);
     }
 
     if line_context > 0 {
@@ -559,8 +552,13 @@ fn process_positions_with_context<R: std::io::Read, W: std::io::Write>(
                         // Show as fragments for each position
                         if let Some(pos_list) = positions_by_line.get(&line_no) {
                             for pos in pos_list {
-                                let fragment = sel::output::Fragment::new(&line, pos.column, char_context);
-                                formatter.write_fragment(line_no, &fragment.content, fragment.pointer_offset())?;
+                                let fragment =
+                                    sel::output::Fragment::new(&line, pos.column, char_context);
+                                formatter.write_fragment(
+                                    line_no,
+                                    &fragment.content,
+                                    fragment.pointer_offset(),
+                                )?;
                             }
                         }
                     } else {
@@ -583,7 +581,11 @@ fn process_positions_with_context<R: std::io::Read, W: std::io::Write>(
                     // Create fragment for each position on this line
                     for pos in pos_list {
                         let fragment = sel::output::Fragment::new(&line, pos.column, char_context);
-                        formatter.write_fragment(line_no, &fragment.content, fragment.pointer_offset())?;
+                        formatter.write_fragment(
+                            line_no,
+                            &fragment.content,
+                            fragment.pointer_offset(),
+                        )?;
                     }
                 } else {
                     formatter.write_target_line(line_no, &line)?;

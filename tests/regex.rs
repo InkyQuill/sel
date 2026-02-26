@@ -43,7 +43,11 @@ fn create_test_file(lines: &[&str]) -> NamedTempFile {
 
 #[test]
 fn test_simple_literal_match() {
-    let file = create_test_file(&["error: something failed", "info: all good", "warning: check this"]);
+    let file = create_test_file(&[
+        "error: something failed",
+        "info: all good",
+        "warning: check this",
+    ]);
     let output = run_sel(&["-e", "error", file.path().to_str().unwrap()]);
 
     assert!(output.contains("error: something failed"));
@@ -82,7 +86,11 @@ fn test_regex_case_sensitive() {
 
 #[test]
 fn test_regex_pattern_wildcard() {
-    let file = create_test_file(&["user123 logged in", "admin456 logged in", "guest789 logged out"]);
+    let file = create_test_file(&[
+        "user123 logged in",
+        "admin456 logged in",
+        "guest789 logged out",
+    ]);
     let output = run_sel(&["-e", r"user\d+", file.path().to_str().unwrap()]);
 
     assert!(output.contains("user123 logged in"));
@@ -91,7 +99,12 @@ fn test_regex_pattern_wildcard() {
 
 #[test]
 fn test_regex_pattern_or() {
-    let file = create_test_file(&["ERROR: fatal", "WARN: caution", "INFO: info", "CRITICAL: crash"]);
+    let file = create_test_file(&[
+        "ERROR: fatal",
+        "WARN: caution",
+        "INFO: info",
+        "CRITICAL: crash",
+    ]);
     let output = run_sel(&["-e", r"(ERROR|CRITICAL)", file.path().to_str().unwrap()]);
 
     assert!(output.contains("ERROR: fatal"));
@@ -180,11 +193,7 @@ fn test_regex_empty_pattern() {
 
 #[test]
 fn test_regex_special_characters() {
-    let file = create_test_file(&[
-        r"function(arg1, arg2)",
-        r"function()",
-        r"function(x)",
-    ]);
+    let file = create_test_file(&[r"function(arg1, arg2)", r"function()", r"function(x)"]);
     let output = run_sel(&["-e", r"function\(.*\)", file.path().to_str().unwrap()]);
 
     assert!(output.contains(r"function(arg1, arg2)"));
@@ -226,7 +235,12 @@ fn test_regex_multiple_files() {
     let file1 = create_test_file(&["ERROR in file1", "INFO in file1"]);
     let file2 = create_test_file(&["ERROR in file2", "DEBUG in file2"]);
 
-    let output = run_sel(&["-e", "ERROR", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "-e",
+        "ERROR",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Both files should show ERROR lines
     assert!(output.contains("ERROR in file1"));
@@ -312,7 +326,11 @@ fn test_regex_email_pattern() {
         "Contact: not-an-email",
         "Contact: another@domain.co.uk",
     ]);
-    let output = run_sel(&["-e", r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", file.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "-e",
+        r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}",
+        file.path().to_str().unwrap(),
+    ]);
 
     assert!(output.contains("user@example.com"));
     assert!(output.contains("admin@test.org"));

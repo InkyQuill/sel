@@ -113,10 +113,7 @@ impl Cli {
             0
         };
 
-        self.args[start..]
-            .iter()
-            .map(PathBuf::from)
-            .collect()
+        self.args[start..].iter().map(PathBuf::from).collect()
     }
 
     /// Check if a string looks like a selector.
@@ -135,12 +132,9 @@ impl Cli {
         }
 
         // Check for invalid characters
-        let valid_chars = s.chars().all(|c| {
-            c.is_ascii_digit()
-                || c == ','
-                || c == ':'
-                || c == '-'
-        });
+        let valid_chars = s
+            .chars()
+            .all(|c| c.is_ascii_digit() || c == ',' || c == ':' || c == '-');
 
         if !valid_chars {
             return false;
@@ -173,13 +167,18 @@ impl Cli {
         // Check if we have files
         let files = self.get_files();
         if files.is_empty() {
-            return Err(crate::SelError::Message("No input files specified".to_string()));
+            return Err(crate::SelError::Message(
+                "No input files specified".to_string(),
+            ));
         }
 
         // Check if -n is used without positional selector or -e
         if self.char_context.is_some()
             && self.regex.is_none()
-            && !self.get_selector().as_ref().is_some_and(|s| s.contains(':'))
+            && !self
+                .get_selector()
+                .as_ref()
+                .is_some_and(|s| s.contains(':'))
         {
             return Err(crate::SelError::CharContextWithoutPosition);
         }

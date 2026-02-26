@@ -42,7 +42,11 @@ fn create_test_file(lines: &[&str]) -> NamedTempFile {
 
 /// Helper to get the filename of a temp file.
 fn temp_file_name(file: &NamedTempFile) -> String {
-    file.path().file_name().unwrap().to_string_lossy().to_string()
+    file.path()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .to_string()
 }
 
 #[test]
@@ -50,7 +54,11 @@ fn test_two_files_simple_selector() {
     let file1 = create_test_file(&["line1 from file1", "line2 from file1"]);
     let file2 = create_test_file(&["line1 from file2", "line2 from file2"]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Both files should show line 1
     assert!(output.contains("line1 from file1"));
@@ -82,7 +90,11 @@ fn test_filename_prefix_multi_file() {
     let file1 = create_test_file(&["content1"]);
     let file2 = create_test_file(&["content2"]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // With multiple files, filename should be shown
     let name1 = temp_file_name(&file1);
@@ -143,7 +155,12 @@ fn test_multi_file_regex_with_filename() {
     let file1 = create_test_file(&["TARGET"]);
     let file2 = create_test_file(&["TARGET"]);
 
-    let output = run_sel(&["-e", "TARGET", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "-e",
+        "TARGET",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     let _name1 = temp_file_name(&file1);
     let _name2 = temp_file_name(&file2);
@@ -157,11 +174,18 @@ fn test_multi_file_complex_selector() {
     let file1 = create_test_file(&["l1", "l2", "l3", "l4", "l5"]);
     let file2 = create_test_file(&["l1", "l2", "l3", "l4", "l5"]);
 
-    let output = run_sel(&["1,3,5", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1,3,5",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Both files should output lines 1, 3, 5
     let lines: Vec<&str> = output.lines().collect();
-    let matching_lines: Vec<_> = lines.iter().filter(|l| l.contains("l1") || l.contains("l3") || l.contains("l5")).collect();
+    let matching_lines: Vec<_> = lines
+        .iter()
+        .filter(|l| l.contains("l1") || l.contains("l3") || l.contains("l5"))
+        .collect();
 
     assert!(matching_lines.len() >= 6); // 3 lines per file * 2 files
 }
@@ -171,7 +195,10 @@ fn test_multi_file_all_lines() {
     let file1 = create_test_file(&["a", "b"]);
     let file2 = create_test_file(&["c", "d"]);
 
-    let output = run_sel(&[file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Without selector, all lines from all files
     assert!(output.contains("a"));
@@ -185,7 +212,11 @@ fn test_multi_file_empty_first_file() {
     let file1 = create_test_file(&[]);
     let file2 = create_test_file(&["content"]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Should still process second file
     assert!(output.contains("content"));
@@ -196,7 +227,11 @@ fn test_multi_file_empty_second_file() {
     let file1 = create_test_file(&["content"]);
     let file2 = create_test_file(&[]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Should still process first file
     assert!(output.contains("content"));
@@ -207,7 +242,11 @@ fn test_multi_file_different_sizes() {
     let file1 = create_test_file(&["only one line"]);
     let file2 = create_test_file(&["line1", "line2", "line3", "line4", "line5"]);
 
-    let output = run_sel(&["3", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "3",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // File1 only has 1 line, file2 has line 3
     assert!(output.contains("line3"));
@@ -218,7 +257,11 @@ fn test_multi_file_with_range_extending_beyond() {
     let file1 = create_test_file(&["a", "b"]);
     let file2 = create_test_file(&["x", "y", "z"]);
 
-    let output = run_sel(&["2-5", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "2-5",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Should handle gracefully - file1 only has 2 lines
     assert!(output.contains("b"));
@@ -303,7 +346,11 @@ fn test_multi_file_duplicate_content() {
     let file1 = create_test_file(&["IDENTICAL LINE"]);
     let file2 = create_test_file(&["IDENTICAL LINE"]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     // Both occurrences should appear
     let count = output.matches("IDENTICAL LINE").count();
@@ -315,7 +362,11 @@ fn test_multi_file_with_special_filenames() {
     let file1 = create_test_file(&["content with spaces"]);
     let file2 = create_test_file(&["content with tabs\t"]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     assert!(output.contains("content with spaces"));
 }
@@ -345,11 +396,8 @@ fn test_many_files() {
 #[test]
 fn test_multi_file_nonexistent_file() {
     let file1 = create_test_file(&["exists"]);
-    let (_stdout, stderr, code) = run_sel_with_result(&[
-        "1",
-        file1.path().to_str().unwrap(),
-        "/nonexistent/file.txt",
-    ]);
+    let (_stdout, stderr, code) =
+        run_sel_with_result(&["1", file1.path().to_str().unwrap(), "/nonexistent/file.txt"]);
 
     // Should error on nonexistent file
     assert!(code != 0 || stderr.contains("Error") || stderr.contains("No such file"));
@@ -377,7 +425,11 @@ fn test_multi_file_unicode_content() {
     let file1 = create_test_file(&["Hello 世界"]);
     let file2 = create_test_file(&["Привет мир"]);
 
-    let output = run_sel(&["1", file1.path().to_str().unwrap(), file2.path().to_str().unwrap()]);
+    let output = run_sel(&[
+        "1",
+        file1.path().to_str().unwrap(),
+        file2.path().to_str().unwrap(),
+    ]);
 
     assert!(output.contains("世界"));
     assert!(output.contains("Привет"));

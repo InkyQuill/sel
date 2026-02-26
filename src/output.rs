@@ -211,7 +211,9 @@ impl<W: Write> OutputFormatter<W> {
     fn format_prefix(&self, line_no: usize) -> String {
         let mut prefix = String::new();
 
-        if self.show_filename && let Some(filename) = &self.filename {
+        if self.show_filename
+            && let Some(filename) = &self.filename
+        {
             prefix.push_str(filename);
             prefix.push(':');
         }
@@ -425,12 +427,6 @@ mod tests {
 
     /// Helper to create a test formatter.
     fn create_test_formatter(color_mode: ColorMode) -> OutputFormatter<Vec<u8>> {
-        OutputFormatter::new(
-            Vec::new(),
-            false,
-            false,
-            None,
-            color_mode,
-        )
+        OutputFormatter::new(Vec::new(), false, false, None, color_mode)
     }
 }

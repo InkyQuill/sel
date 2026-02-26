@@ -68,7 +68,7 @@ pub fn open_file(path: &Path) -> Result<std::fs::File> {
 pub struct ContextBuffer {
     buffer: Vec<Option<(usize, String)>>,
     capacity: usize,
-    pos: usize, // Current position in the circular buffer
+    pos: usize,  // Current position in the circular buffer
     size: usize, // Number of items currently in buffer
 }
 
