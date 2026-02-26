@@ -211,11 +211,9 @@ impl<W: Write> OutputFormatter<W> {
     fn format_prefix(&self, line_no: usize) -> String {
         let mut prefix = String::new();
 
-        if self.show_filename {
-            if let Some(filename) = &self.filename {
-                prefix.push_str(filename);
-                prefix.push(':');
-            }
+        if self.show_filename && let Some(filename) = &self.filename {
+            prefix.push_str(filename);
+            prefix.push(':');
         }
 
         if self.show_line_numbers {
@@ -248,13 +246,8 @@ impl Fragment {
 
         // Calculate fragment bounds
         // Ensure start is within bounds
-        let start = if col_idx <= context {
-            0
-        } else {
-            col_idx - context
-        };
-        let start = std::cmp::min(start, line_len);
-        let end = std::cmp::min(line_len, col_idx + context + 1);
+        let start = col_idx.saturating_sub(context).min(line_len);
+        let end = line_len.min(col_idx + context + 1);
 
         // Extract fragment (assuming valid UTF-8 for simplicity)
         let content = if start < end {
@@ -334,10 +327,11 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::single_range_in_vec_init)]
     fn test_highlight_matches_single() {
         let formatter = create_test_formatter(ColorMode::Always);
         let text = "Hello ERROR in this line";
-        let matches = vec![6..11]; // "ERROR"
+        let matches = [6..11]; // "ERROR"
         let result = formatter.highlight_matches(text, &matches);
         // Should contain ANSI escape codes for inverse video
         assert!(result.contains("\x1b[7m"));
@@ -346,10 +340,11 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::single_range_in_vec_init)]
     fn test_highlight_matches_multiple() {
         let formatter = create_test_formatter(ColorMode::Always);
         let text = "ERROR: something went wrong with ERROR code";
-        let matches = vec![0..5, 33..38]; // Two "ERROR"s
+        let matches = [0..5, 33..38]; // Two "ERROR"s
         let result = formatter.highlight_matches(text, &matches);
         // Should highlight both matches
         assert!(result.contains("\x1b[7mERROR\x1b[0m"));
@@ -359,10 +354,11 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::single_range_in_vec_init)]
     fn test_highlight_matches_no_color() {
         let formatter = create_test_formatter(ColorMode::Never);
         let text = "Hello ERROR in this line";
-        let matches = vec![6..11];
+        let matches = [6..11];
         let result = formatter.highlight_matches(text, &matches);
         // Even with ColorMode::Never, highlight_matches still adds colors
         // The decision to use it is made by the caller
@@ -410,17 +406,18 @@ mod tests {
     fn test_highlight_matches_overlapping() {
         let formatter = create_test_formatter(ColorMode::Always);
         let text = "ERROR123ERROR";
-        let matches = vec![0..5, 5..10]; // Overlapping at position 5
+        let matches = [0..5, 5..10]; // Overlapping at position 5
         let result = formatter.highlight_matches(text, &matches);
         // Should handle overlapping ranges gracefully
         assert!(result.contains("\x1b[7m"));
     }
 
     #[test]
+    #[allow(clippy::single_range_in_vec_init)]
     fn test_highlight_matches_out_of_bounds() {
         let formatter = create_test_formatter(ColorMode::Always);
         let text = "Short";
-        let matches = vec![0..100]; // Beyond text length
+        let matches = [0..100]; // Beyond text length
         let result = formatter.highlight_matches(text, &matches);
         // Should clamp to text length
         assert!(result.contains("\x1b[7mShort\x1b[0m"));

@@ -22,8 +22,8 @@ termcolor = "1.4"
 thiserror = "2.0"
 anyhow = "1.0"
 
-# For --file (stdin) support
-atty = "0.2"
+# For terminal detection
+is-terminal = "0.4"
 
 [dev-dependencies]
 # Property-based testing
@@ -34,9 +34,6 @@ tempfile = "3.14"
 
 # Benchmarking
 criterion = "0.5"
-
-# For integration tests
-cargo-bin = "0.2"
 
 [profile.release]
 opt-level = 3

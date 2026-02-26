@@ -1,6 +1,7 @@
 //! Command-line argument parsing using clap.
 
 use clap::Parser;
+use std::io::IsTerminal;
 use std::path::PathBuf;
 
 /// `sel` — Select slices from text files by line numbers, ranges, positions, or regex.
@@ -102,7 +103,7 @@ impl Cli {
 
         // If using regex mode, all args are files
         if self.regex.is_some() {
-            return self.args.iter().map(|s| PathBuf::from(s)).collect();
+            return self.args.iter().map(PathBuf::from).collect();
         }
 
         // If first arg is a selector, skip it
@@ -114,7 +115,7 @@ impl Cli {
 
         self.args[start..]
             .iter()
-            .map(|s| PathBuf::from(s))
+            .map(PathBuf::from)
             .collect()
     }
 
@@ -176,16 +177,11 @@ impl Cli {
         }
 
         // Check if -n is used without positional selector or -e
-        if self.char_context.is_some() {
-            if self.regex.is_none() {
-                if let Some(sel) = self.get_selector() {
-                    if !sel.contains(':') {
-                        return Err(crate::SelError::CharContextWithoutPosition);
-                    }
-                } else {
-                    return Err(crate::SelError::CharContextWithoutPosition);
-                }
-            }
+        if self.char_context.is_some()
+            && self.regex.is_none()
+            && !self.get_selector().as_ref().is_some_and(|s| s.contains(':'))
+        {
+            return Err(crate::SelError::CharContextWithoutPosition);
         }
 
         Ok(())
@@ -198,7 +194,7 @@ impl Cli {
             Some("never") => ColorMode::Never,
             Some("auto") | None => {
                 // Check if stdout is a terminal
-                if atty::is(atty::Stream::Stdout) {
+                if std::io::stdout().is_terminal() {
                     ColorMode::Always
                 } else {
                     ColorMode::Never

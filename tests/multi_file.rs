@@ -330,7 +330,7 @@ fn test_many_files() {
         .collect();
     let args: Vec<_> = ["1"]
         .iter()
-        .map(|s| *s)
+        .copied()
         .chain(files.iter().map(|f| f.path().to_str().unwrap()))
         .collect();
 

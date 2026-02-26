@@ -164,10 +164,10 @@ fn process_regex_simple<R: std::io::Read, W: std::io::Write>(
     _cli: &Cli,
 ) -> sel::Result<()> {
     while let Some((line_no, line)) = reader.read_line()? {
-        if let Some(matches) = find_matches(regex, &line) {
-            if !matches.is_empty() {
-                formatter.write_line_with_matches(line_no, &line, &matches)?;
-            }
+        if let Some(matches) = find_matches(regex, &line)
+            && !matches.is_empty()
+        {
+            formatter.write_line_with_matches(line_no, &line, &matches)?;
         }
     }
     Ok(())
@@ -188,10 +188,10 @@ fn process_regex_line_context<R: std::io::Read, W: std::io::Write>(
     let mut target_lines: BTreeSet<usize> = BTreeSet::new();
 
     while let Some((line_no, line)) = reader.read_line()? {
-        if let Some(matches) = find_matches(regex, &line) {
-            if !matches.is_empty() {
-                target_lines.insert(line_no);
-            }
+        if let Some(matches) = find_matches(regex, &line)
+            && !matches.is_empty()
+        {
+            target_lines.insert(line_no);
         }
         all_lines.push((line_no, line));
     }
@@ -201,21 +201,10 @@ fn process_regex_line_context<R: std::io::Read, W: std::io::Write>(
         let is_target = target_lines.contains(line_no);
 
         // Check if this line should be shown (target or within context)
-        let should_show = if is_target {
-            true
-        } else {
-            // Check if within context of any target line
-            target_lines
-                .iter()
-                .any(|&target| {
-                    let diff = if *line_no > target {
-                        *line_no - target
-                    } else {
-                        target - *line_no
-                    };
-                    diff <= context
-                })
-        };
+        let should_show = is_target
+            || target_lines.iter().any(|&target| {
+                line_no.abs_diff(target) <= context
+            });
 
         if should_show {
             if is_target {
@@ -247,30 +236,30 @@ fn process_regex_char_context<R: std::io::Read, W: std::io::Write>(
     } else {
         // Just char context (fragments with pointers)
         while let Some((line_no, line)) = reader.read_line()? {
-            if let Some(matches) = find_matches(regex, &line) {
-                if !matches.is_empty() {
-                    // Output each match as a fragment
-                    for m in matches {
-                        // Create fragment centered on the match
-                        let match_center = m.start + (m.end - m.start) / 2;
-                        let fragment = sel::output::Fragment::new(&line, match_center + 1, char_context);
+            if let Some(matches) = find_matches(regex, &line)
+                && !matches.is_empty()
+            {
+                // Output each match as a fragment
+                for m in matches {
+                    // Create fragment centered on the match
+                    let match_center = m.start + (m.end - m.start) / 2;
+                    let fragment = sel::output::Fragment::new(&line, match_center + 1, char_context);
 
-                        // Calculate where the match is within the fragment
-                        let fragment_start = fragment.start_column.saturating_sub(1);
-                        let match_start_in_fragment = m.start.saturating_sub(fragment_start);
-                        let match_end_in_fragment = m.end.saturating_sub(fragment_start);
+                    // Calculate where the match is within the fragment
+                    let fragment_start = fragment.start_column.saturating_sub(1);
+                    let match_start_in_fragment = m.start.saturating_sub(fragment_start);
+                    let match_end_in_fragment = m.end.saturating_sub(fragment_start);
 
-                        // Clamp to fragment bounds
-                        let frag_len = fragment.content.len();
-                        let start = match_start_in_fragment.min(frag_len);
-                        let end = match_end_in_fragment.min(frag_len);
+                    // Clamp to fragment bounds
+                    let frag_len = fragment.content.len();
+                    let start = match_start_in_fragment.min(frag_len);
+                    let end = match_end_in_fragment.min(frag_len);
 
-                        formatter.write_fragment_with_match(
-                            line_no,
-                            &fragment.content,
-                            start..end,
-                        )?;
-                    }
+                    formatter.write_fragment_with_match(
+                        line_no,
+                        &fragment.content,
+                        start..end,
+                    )?;
                 }
             }
         }
@@ -297,11 +286,11 @@ fn process_regex_both_contexts<R: std::io::Read, W: std::io::Write>(
         std::collections::HashMap::new();
 
     while let Some((line_no, line)) = reader.read_line()? {
-        if let Some(matches) = find_matches(regex, &line) {
-            if !matches.is_empty() {
-                target_lines.insert(line_no);
-                line_matches.insert(line_no, matches);
-            }
+        if let Some(matches) = find_matches(regex, &line)
+            && !matches.is_empty()
+        {
+            target_lines.insert(line_no);
+            line_matches.insert(line_no, matches);
         }
         all_lines.push((line_no, line));
     }
@@ -310,20 +299,10 @@ fn process_regex_both_contexts<R: std::io::Read, W: std::io::Write>(
     for (line_no, line) in &all_lines {
         let is_target = target_lines.contains(line_no);
 
-        let should_show = if is_target {
-            true
-        } else {
-            target_lines
-                .iter()
-                .any(|&target| {
-                    let diff = if *line_no > target {
-                        *line_no - target
-                    } else {
-                        target - *line_no
-                    };
-                    diff <= line_context
-                })
-        };
+        let should_show = is_target
+            || target_lines.iter().any(|&target| {
+                line_no.abs_diff(target) <= line_context
+            });
 
         if should_show {
             if is_target {
@@ -387,13 +366,8 @@ fn process_simple<R: std::io::Read, W: std::io::Write>(
         let idx = specs.partition_point(|spec| spec.start() < line_no);
 
         // Check if this spec or any previous spec contains the line
-        let matches = if idx < specs.len() && specs[idx].contains(line_no) {
-            true
-        } else if idx > 0 && specs[idx - 1].contains(line_no) {
-            true
-        } else {
-            false
-        };
+        let matches = (idx < specs.len() && specs[idx].contains(line_no))
+            || (idx > 0 && specs[idx - 1].contains(line_no));
 
         if matches {
             formatter.write_line(line_no, &line)?;
