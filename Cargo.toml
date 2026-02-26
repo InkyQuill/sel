@@ -1,0 +1,54 @@
+[package]
+name = "sel"
+version = "0.1.0"
+description = "Select slices from text files by line numbers, ranges, positions, or regex"
+repository = "https://github.com/inky/sel"
+license = "MIT OR Apache-2.0"
+authors = ["InkyQuill <inkyquill@users.noreply.github.com>"]
+edition = "2024"
+rust-version = "1.92"
+
+[dependencies]
+# CLI argument parsing
+clap = { version = "4.5", features = ["derive"] }
+
+# Regular expressions (PCRE2 compatible)
+regex = "1.11"
+
+# Color support for terminal output
+termcolor = "1.4"
+
+# Better error handling
+thiserror = "2.0"
+anyhow = "1.0"
+
+# For --file (stdin) support
+atty = "0.2"
+
+[dev-dependencies]
+# Property-based testing
+proptest = "1.5"
+
+# Temp file handling in tests
+tempfile = "3.14"
+
+# Benchmarking
+criterion = "0.5"
+
+# For integration tests
+cargo-bin = "0.2"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"
+
+[[bin]]
+name = "sel"
+path = "src/main.rs"
+
+[[bench]]
+name = "large_file"
+harness = false

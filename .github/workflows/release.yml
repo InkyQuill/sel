@@ -1,0 +1,256 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v0.1.0)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Build and test across platforms
+  build:
+    name: Build on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: sel
+            asset_name: sel-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: sel
+            asset_name: sel-linux-aarch64
+            use_cross: true
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact_name: sel
+            asset_name: sel-darwin-x86_64
+          - os: macos-14
+            target: aarch64-apple-darwin
+            artifact_name: sel
+            asset_name: sel-darwin-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: sel.exe
+            asset_name: sel-windows-x86_64.exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install cross (for cross-compilation)
+        if: matrix.use_cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build release binary
+        run: |
+          if [ "${{ matrix.use_cross }}" = "true" ]; then
+            cross build --release --target ${{ matrix.target }}
+          else
+            cargo build --release --target ${{ matrix.target }}
+          fi
+        shell: bash
+
+      - name: Strip binary (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: strip target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact_name }}
+
+  # Run tests
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust }}
+
+      - name: Run unit tests
+        run: cargo test --all-features
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+  # Create GitHub Release
+  release:
+    name: Create Release
+    needs: [build, test]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -R artifacts
+
+      - name: Create checksums
+        run: |
+          cd artifacts
+          for dir in */; do
+            cd "$dir"
+            if [ -f "sel" ]; then
+              sha256sum sel > sel.sha256
+              sha512sum sel > sel.sha512
+            elif [ -f "sel.exe" ]; then
+              sha256sum sel.exe > sel.exe.sha256
+              sha512sum sel.exe > sel.exe.sha512
+            fi
+            cd ..
+          done
+          cd ..
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          mv artifacts/sel-linux-x86_64/sel release/sel-linux-x86_64
+          mv artifacts/sel-linux-x86_64/sel.sha256 release/sel-linux-x86_64.sha256
+          mv artifacts/sel-linux-x86_64/sel.sha512 release/sel-linux-x86_64.sha512
+
+          mv artifacts/sel-linux-aarch64/sel release/sel-linux-aarch64
+          mv artifacts/sel-linux-aarch64/sel.sha256 release/sel-linux-aarch64.sha256
+          mv artifacts/sel-linux-aarch64/sel.sha512 release/sel-linux-aarch64.sha512
+
+          mv artifacts/sel-darwin-x86_64/sel release/sel-darwin-x86_64
+          mv artifacts/sel-darwin-x86_64/sel.sha256 release/sel-darwin-x86_64.sha256
+          mv artifacts/sel-darwin-x86_64/sel.sha512 release/sel-darwin-x86_64.sha512
+
+          mv artifacts/sel-darwin-aarch64/sel release/sel-darwin-aarch64
+          mv artifacts/sel-darwin-aarch64/sel.sha256 release/sel-darwin-aarch64.sha256
+          mv artifacts/sel-darwin-aarch64/sel.sha512 release/sel-darwin-aarch64.sha512
+
+          mv artifacts/sel-windows-x86_64.exe/sel.exe release/sel-windows-x86_64.exe
+          mv artifacts/sel-windows-x86_64.exe/sel.exe.sha256 release/sel-windows-x86_64.exe.sha256
+          mv artifacts/sel-windows-x86_64.exe/sel.exe.sha512 release/sel-windows-x86_64.exe.sha512
+
+          # Create a checksums file
+          cd release
+          sha256sum * > SHA256SUMS.txt
+          sha512sum * > SHA512SUMS.txt
+          cd ..
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [ -z "$VERSION" ] || [ "$VERSION" == "" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          cat > release_notes.md << EOF
+          ## Sel $VERSION
+
+          A compact CLI utility for extracting fragments from text files by line numbers, ranges, positions, or regex patterns.
+
+          ### Downloads
+
+          Choose the appropriate binary for your system:
+
+          - **Linux x86_64**: \`sel-linux-x86_64\`
+          - **Linux aarch64**: \`sel-linux-aarch64\`
+          - **macOS Intel**: \`sel-darwin-x86_64\`
+          - **macOS Apple Silicon**: \`sel-darwin-aarch64\`
+          - **Windows x86_64**: \`sel-windows-x86_64.exe\`
+
+          ### Installation
+
+          \`\`\`bash
+          # Download the binary for your platform
+          wget https://github.com/InkyQuill/sel/releases/download/$VERSION/sel-linux-x86_64
+
+          # Make it executable
+          chmod +x sel-linux-x86_64
+
+          # Move to your PATH
+          mv sel-linux-x86_64 ~/.local/bin/sel
+          \`\`\`
+
+          ### Verification
+
+          Verify the downloaded binary using the provided checksums:
+
+          \`\`\`bash
+          # Download the checksums file
+          wget https://github.com/InkyQuill/sel/releases/download/$VERSION/SHA256SUMS.txt
+
+          # Verify
+          sha256sum -c SHA256SUMS.txt --ignore-missing
+          \`\`\`
+
+          ### What's New
+
+          See the [CHANGELOG](https://github.com/InkyQuill/sel/blob/main/CHANGELOG.md) for details.
+          EOF
+          cat release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*
+          body_path: release_notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Publish to crates.io
+  publish:
+    name: Publish to crates.io
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: "!contains(github.ref, 'alpha') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc')"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Login to crates.io
+        run: cargo login ${{ secrets.CRATES_IO_TOKEN }}
+
+      - name: Publish to crates.io
+        run: cargo publish
