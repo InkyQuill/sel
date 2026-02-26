@@ -35,7 +35,7 @@ jobs:
             artifact_name: sel
             asset_name: sel-linux-aarch64
             use_cross: true
-          - os: macos-13
+          - os: macos-latest
             target: x86_64-apple-darwin
             artifact_name: sel
             asset_name: sel-darwin-x86_64
