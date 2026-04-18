@@ -1,0 +1,65 @@
+# release-plz configuration.
+# Docs: https://release-plz.ieni.dev/
+#
+# Flow this config encodes:
+#
+#   1. On every push to `main`, release-plz inspects Conventional Commit
+#      messages since the last git tag. If the accumulated commits warrant
+#      a release, it opens or updates a "release PR" that:
+#        - bumps `version` in Cargo.toml,
+#        - rewrites `CHANGELOG.md` with a new dated section.
+#      If only `chore:` / `ci:` / `test:` landed, no PR is opened — these
+#      are not user-visible.
+#
+#   2. Merging the release PR lands the version bump on `main`. On that
+#      next push, the `release` command in our workflow detects the new
+#      version, creates a git tag (e.g. `v0.3.0`), and pushes it.
+#
+#   3. The tag push fires `.github/workflows/release.yml` (cargo-dist),
+#      which builds cross-platform artifacts, creates the GitHub Release,
+#      and publishes to crates.io.
+#
+# We disable release-plz's own publishing + GitHub-Release creation because
+# cargo-dist owns those downstream of the tag.
+
+[workspace]
+changelog_update = true
+git_release_enable = false   # cargo-dist creates the GitHub Release.
+git_tag_enable = true        # we need the tag to fire release.yml.
+publish = false              # cargo-dist publishes to crates.io.
+semver_check = false         # skip cargo-semver-checks (optional, slow).
+
+[changelog]
+header = """# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+"""
+
+body = """
+## [{{ version | trim_start_matches(pat="v") }}] — {{ timestamp | date(format="%Y-%m-%d") }}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
+{% for commit in commits %}- {{ commit.message | split(pat="\\n") | first | trim | upper_first }}{% if commit.breaking %} **(BREAKING)**{% endif %}
+{% endfor %}
+{% endfor %}"""
+
+# Map Conventional Commit types → Keep-a-Changelog sections.
+# Types not listed here are skipped from the changelog but still trigger
+# version bumps according to release-plz's defaults (`feat` → minor,
+# `fix`/`perf`/`refactor` → patch, `!` or `BREAKING CHANGE:` → major).
+commit_parsers = [
+  { message = "^feat", group = "Added" },
+  { message = "^fix", group = "Fixed" },
+  { message = "^perf", group = "Changed" },
+  { message = "^refactor", group = "Changed" },
+  { message = "^revert", group = "Changed" },
+  { message = "^docs", skip = true },
+  { message = "^chore", skip = true },
+  { message = "^ci", skip = true },
+  { message = "^test", skip = true },
+  { message = "^style", skip = true },
+  { message = "^build", skip = true },
+]
