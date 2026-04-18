@@ -18,15 +18,13 @@ fn main() {
 
 fn run(cli: Cli) -> sel::Result<()> {
     let files = cli.get_files();
-    if files.is_empty() {
-        return Err(sel::SelError::InvalidSelector(
-            "no input files specified".to_string(),
-        ));
-    }
     let show_filename = cli.with_filename || files.len() > 1;
     for path in &files {
-        let app = cli.into_app(path, show_filename)?;
-        sel::pipeline::run(app)?;
+        if path.as_os_str() == "-" {
+            sel::pipeline::run(cli.into_app_for_stdin(show_filename)?)?;
+        } else {
+            sel::pipeline::run(cli.into_app_for_file(path, show_filename)?)?;
+        }
     }
     Ok(())
 }
