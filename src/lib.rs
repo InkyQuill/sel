@@ -13,6 +13,6 @@ pub mod source;
 pub mod types;
 
 pub use error::{Result, SelError};
-pub use matcher::{AllMatcher, LineMatcher, Matcher};
+pub use matcher::{AllMatcher, LineMatcher, Matcher, PositionMatcher};
 pub use selector::{LineSpec, Position, Selector};
 pub use types::{Emit, Line, MatchInfo, Role};

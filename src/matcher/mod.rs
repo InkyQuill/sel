@@ -1,8 +1,10 @@
 //! Matcher stage — decides whether a given line is a hit.
 
 pub mod lines;
+pub mod position;
 
 pub use lines::LineMatcher;
+pub use position::PositionMatcher;
 
 use crate::{Line, MatchInfo};
 
