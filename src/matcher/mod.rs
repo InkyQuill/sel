@@ -2,7 +2,9 @@
 
 pub mod lines;
 pub mod position;
+pub mod regex;
 
+pub use self::regex::RegexMatcher;
 pub use lines::LineMatcher;
 pub use position::PositionMatcher;
 
