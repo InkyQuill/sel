@@ -126,22 +126,45 @@ Before opening a PR:
 - [ ] `cargo fmt --check` passes.
 - [ ] `cargo clippy --all-targets -- -D warnings` is clean.
 - [ ] `cargo test` is green.
-- [ ] Public API changes are reflected in `CHANGELOG.md` under
-      `## [Unreleased]`.
 - [ ] New features come with integration tests under `tests/`.
 - [ ] Rustdoc comments on new public items.
+
+`Cargo.toml` and `CHANGELOG.md` are maintained automatically by
+[release-plz](https://release-plz.ieni.dev/) based on your commit messages.
+You do **not** need to bump the version or edit the `[Unreleased]` section
+manually — just write clear Conventional Commits.
 
 Keep PRs focused — one change, one PR. Prefer smaller diffs with clear intent
 over sweeping rewrites.
 
 ## Release process (maintainers)
 
-1. Bump `version` in `Cargo.toml` and move `## [Unreleased]` → the new version
-   heading in `CHANGELOG.md`.
-2. Commit (`chore: bump to X.Y.Z`), tag `vX.Y.Z`, push with tags.
-3. The [`release.yml`](.github/workflows/release.yml) workflow, powered by
-   [`cargo-dist`](https://opensource.axo.dev/cargo-dist/), builds cross-platform
-   binaries, publishes a GitHub Release, and runs `cargo publish` to crates.io.
+Releases are driven by [release-plz](https://release-plz.ieni.dev/) +
+[cargo-dist](https://opensource.axo.dev/cargo-dist/):
+
+1. After any `feat:` / `fix:` / `perf:` / `refactor:` commit lands on `main`,
+   the [`release-plz.yml`](.github/workflows/release-plz.yml) workflow opens
+   or updates a **release PR** titled something like `chore: release v0.3.0`.
+   The PR bumps `Cargo.toml` and rewrites the `CHANGELOG.md` section for the
+   upcoming version using commit messages since the last tag.
+2. Review the release PR. Edit the CHANGELOG body in the PR if you want to
+   polish it. Merge when you're ready to ship.
+3. Merging the release PR triggers release-plz's `release` job, which pushes
+   the `vX.Y.Z` tag.
+4. The tag push fires [`release.yml`](.github/workflows/release.yml)
+   (cargo-dist), which builds cross-platform binaries, publishes a GitHub
+   Release, and runs `cargo publish` to crates.io.
+
+### One-time setup
+
+The release-plz workflow needs a Personal Access Token (classic, `repo`
+scope) stored as a repo secret named `RELEASE_PLZ_TOKEN`. A token is needed
+(rather than the default `GITHUB_TOKEN`) because GitHub deliberately
+prevents pushes made with `GITHUB_TOKEN` from triggering downstream
+workflows — the release tag would land but cargo-dist would never fire.
+
+`CARGO_REGISTRY_TOKEN` is still required by cargo-dist's
+`publish-crates-io` job.
 
 ## Reporting bugs / requesting features
 
