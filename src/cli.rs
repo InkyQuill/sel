@@ -201,6 +201,80 @@ impl Cli {
     }
 }
 
+use crate::app::{Seek, Stage1};
+use crate::context::{LineContext, NoContext};
+use crate::format::{FormatOpts, FragmentFormatter, PlainFormatter};
+use crate::matcher::{AllMatcher, LineMatcher, PositionMatcher, RegexMatcher};
+use crate::sink::StdoutSink;
+use crate::source::{FileSource, Source};
+use crate::{App, Selector};
+
+impl Cli {
+    /// Build a ready-to-run `App` for a single file.
+    ///
+    /// Callers iterate over `get_files()` and build one `App` per file.
+    pub fn into_app(
+        &self,
+        path: &std::path::Path,
+        show_filename: bool,
+    ) -> crate::Result<App<Seek>> {
+        let source = FileSource::open(path)?;
+        let filename = if show_filename {
+            Some(source.label().to_string())
+        } else {
+            None
+        };
+        let sink = StdoutSink::new();
+        let color = match self.color.as_deref() {
+            Some("always") => true,
+            Some("never") => false,
+            _ => crate::sink::Sink::is_terminal(&sink),
+        };
+        let opts = FormatOpts {
+            show_line_numbers: !self.no_line_numbers,
+            show_filename,
+            filename,
+            color,
+            // Target marker (`> `) only appears in context-aware output.
+            target_marker: matches!(self.context, Some(n) if n > 0),
+        };
+
+        // Matcher + seek stage.
+        let stage2 = Stage1::with_seekable_source(Box::new(source));
+        let stage3 = if let Some(pat) = &self.regex {
+            stage2.with_matcher(Box::new(RegexMatcher::new(pat, false)?))
+        } else if let Some(raw) = self.get_selector() {
+            let sel = Selector::parse(&raw)?;
+            match sel {
+                Selector::All => stage2.with_matcher(Box::new(AllMatcher)),
+                Selector::LineNumbers(_) => {
+                    stage2.with_matcher(Box::new(LineMatcher::from_selector(&sel)))
+                }
+                Selector::Positions(_) => {
+                    stage2.with_position_matcher(PositionMatcher::from_selector(&sel))
+                }
+            }
+        } else {
+            stage2.with_matcher(Box::new(AllMatcher))
+        };
+
+        // Expander.
+        let stage4 = match self.context {
+            Some(n) if n > 0 => stage3.with_expander(Box::new(LineContext::new(n))),
+            _ => stage3.with_expander(Box::new(NoContext)),
+        };
+
+        // Formatter.
+        let stage5 = if let Some(n) = self.char_context {
+            stage4.with_formatter(Box::new(FragmentFormatter::new(opts, n)))
+        } else {
+            stage4.with_formatter(Box::new(PlainFormatter::new(opts)))
+        };
+
+        Ok(stage5.with_sink(Box::new(sink)))
+    }
+}
+
 /// Color output mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ColorMode {

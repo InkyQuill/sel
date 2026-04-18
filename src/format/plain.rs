@@ -44,8 +44,10 @@ impl PlainFormatter {
 impl Formatter for PlainFormatter {
     fn write(&mut self, sink: &mut dyn Write, emit: &Emit) -> io::Result<()> {
         let marker = match emit.role {
-            Role::Target => ansi::paint(self.opts.color, ansi::GREEN, ">") + " ",
-            Role::Context => String::new(),
+            Role::Target if self.opts.target_marker => {
+                ansi::paint(self.opts.color, ansi::GREEN, ">") + " "
+            }
+            _ => String::new(),
         };
         let prefix = self.opts.prefix(emit.line.no);
         let content = self.render_content(&emit.line.bytes, &emit.match_info.spans);
@@ -64,6 +66,7 @@ mod tests {
             show_filename: false,
             filename: None,
             color,
+            target_marker: true,
         }
     }
 

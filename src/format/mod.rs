@@ -22,6 +22,9 @@ pub struct FormatOpts {
     pub show_filename: bool,
     pub filename: Option<String>,
     pub color: bool,
+    /// Prepend `"> "` (colorized green) before target lines.
+    /// Set `true` only when mixing target and context lines (i.e. `-c N`).
+    pub target_marker: bool,
 }
 
 impl FormatOpts {

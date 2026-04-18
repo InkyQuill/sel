@@ -88,6 +88,7 @@ mod tests {
             show_filename: false,
             filename: None,
             color: false,
+            target_marker: false,
         };
         let mut f = FragmentFormatter::new(opts, 2);
         let mut buf: Vec<u8> = Vec::new();

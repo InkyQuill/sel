@@ -43,20 +43,6 @@ pub enum SelError {
 /// Result type alias for `sel`.
 pub type Result<T> = std::result::Result<T, SelError>;
 
-/// Convert bare `io::Error` into `SelError::Io` with an unknown path.
-///
-/// This impl is a transitional shim for legacy code paths that propagate
-/// raw `io::Error` (output writes, reader internals). Call sites that know
-/// their path should construct `SelError::Io { path, source }` directly.
-impl From<io::Error> for SelError {
-    fn from(source: io::Error) -> Self {
-        SelError::Io {
-            path: "<unknown>".to_string(),
-            source,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
