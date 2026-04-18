@@ -8,6 +8,7 @@ pub mod error;
 pub mod output;
 pub mod reader;
 pub mod selector;
+pub mod source;
 pub mod types;
 
 pub use error::{Result, SelError};
