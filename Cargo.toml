@@ -15,9 +15,6 @@ clap = { version = "4.5", features = ["derive"] }
 # Regular expressions (PCRE2 compatible)
 regex = "1.11"
 
-# Color support for terminal output
-termcolor = "1.4"
-
 # Better error handling
 thiserror = "2.0"
 
