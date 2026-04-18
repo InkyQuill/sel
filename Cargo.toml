@@ -1,12 +1,17 @@
 [package]
 name = "sel"
-version = "0.1.0"
+version = "0.2.0"
 description = "Select slices from text files by line numbers, ranges, positions, or regex"
-repository = "https://github.com/inky/sel"
+repository = "https://github.com/InkyQuill/sel"
+homepage = "https://github.com/InkyQuill/sel"
+documentation = "https://docs.rs/sel"
+readme = "README.md"
 license = "MIT OR Apache-2.0"
 authors = ["InkyQuill <inkyquill@users.noreply.github.com>"]
 edition = "2024"
 rust-version = "1.92"
+categories = ["command-line-utilities", "text-processing"]
+keywords = ["cli", "grep", "text", "select", "extract"]
 
 [dependencies]
 # CLI argument parsing
