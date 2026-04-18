@@ -1,7 +1,9 @@
 //! Output sinks.
 
+pub mod file;
 pub mod stdout;
 
+pub use file::FileSink;
 pub use stdout::StdoutSink;
 
 use std::io::{self, Write};
