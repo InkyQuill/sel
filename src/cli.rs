@@ -57,6 +57,14 @@ pub struct Cli {
     #[arg(long = "color", value_name = "WHEN")]
     pub color: Option<String>,
 
+    /// Write output to FILE instead of stdout. Use `-` for stdout explicitly.
+    #[arg(short = 'o', long = "output", value_name = "FILE")]
+    pub output: Option<String>,
+
+    /// With `-o`, overwrite an existing file.
+    #[arg(long = "force")]
+    pub force: bool,
+
     /// Selector and/or file(s)
     ///
     /// The first positional argument can be:
@@ -211,11 +219,31 @@ use crate::app::{NonSeek, Seek, Stage1};
 use crate::context::{LineContext, NoContext};
 use crate::format::{FormatOpts, FragmentFormatter, PlainFormatter};
 use crate::matcher::{AllMatcher, LineMatcher, PositionMatcher, RegexMatcher};
-use crate::sink::StdoutSink;
+use crate::sink::{FileSink, StdoutSink};
 use crate::source::{FileSource, Source, StdinSource};
 use crate::{App, Selector};
 
 impl Cli {
+    /// Construct the output sink based on `--output`/`--force` flags.
+    fn make_sink(&self) -> crate::Result<Box<dyn crate::sink::Sink>> {
+        match self.output.as_deref() {
+            None | Some("-") => Ok(Box::new(StdoutSink::new())),
+            Some(path) => {
+                let sink = FileSink::create(std::path::Path::new(path), self.force)?;
+                Ok(Box::new(sink))
+            }
+        }
+    }
+
+    /// Resolve `--color` against whether the sink is a terminal.
+    fn resolve_color(&self, to_terminal: bool) -> bool {
+        match self.color.as_deref() {
+            Some("always") => true,
+            Some("never") => false,
+            _ => to_terminal,
+        }
+    }
+
     /// Build a ready-to-run `App` for a single file.
     ///
     /// Callers iterate over `get_files()` and build one `App` per file.
@@ -230,12 +258,8 @@ impl Cli {
         } else {
             None
         };
-        let sink = StdoutSink::new();
-        let color = match self.color.as_deref() {
-            Some("always") => true,
-            Some("never") => false,
-            _ => crate::sink::Sink::is_terminal(&sink),
-        };
+        let sink = self.make_sink()?;
+        let color = self.resolve_color(sink.is_terminal());
         let opts = FormatOpts {
             show_line_numbers: !self.no_line_numbers,
             show_filename,
@@ -277,7 +301,7 @@ impl Cli {
             stage4.with_formatter(Box::new(PlainFormatter::new(opts)))
         };
 
-        Ok(stage5.with_sink(Box::new(sink)))
+        Ok(stage5.with_sink(sink))
     }
 
     /// Build a ready-to-run `App` for stdin input.
@@ -296,12 +320,8 @@ impl Cli {
         } else {
             None
         };
-        let sink = StdoutSink::new();
-        let color = match self.color.as_deref() {
-            Some("always") => true,
-            Some("never") => false,
-            _ => crate::sink::Sink::is_terminal(&sink),
-        };
+        let sink = self.make_sink()?;
+        let color = self.resolve_color(sink.is_terminal());
         let opts = FormatOpts {
             show_line_numbers: !self.no_line_numbers,
             show_filename,
@@ -338,7 +358,7 @@ impl Cli {
             stage4.with_formatter(Box::new(PlainFormatter::new(opts)))
         };
 
-        Ok(stage5.with_sink(Box::new(sink)))
+        Ok(stage5.with_sink(sink))
     }
 }
 
