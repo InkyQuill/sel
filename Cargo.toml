@@ -20,7 +20,6 @@ termcolor = "1.4"
 
 # Better error handling
 thiserror = "2.0"
-anyhow = "1.0"
 
 # For terminal detection
 is-terminal = "0.4"
