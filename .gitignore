@@ -17,3 +17,6 @@ Thumbs.db
 
 # Testing
 /.cargo/
+
+# Claude Code local state (permissions overrides, runtime locks)
+.claude/

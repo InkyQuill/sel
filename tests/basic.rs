@@ -2,9 +2,23 @@
 //!
 //! These tests cover fundamental functionality and edge cases.
 
+use std::fs;
 use std::io::Write;
+use std::path::Path;
 use std::process::Command;
 use tempfile::NamedTempFile;
+
+fn package_version_from_manifest() -> String {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let toml = fs::read_to_string(dir.join("Cargo.toml")).expect("read Cargo.toml");
+    toml.lines()
+        .map(str::trim)
+        .find_map(|line| line.strip_prefix("version = "))
+        .expect("version key in Cargo.toml")
+        .trim()
+        .trim_matches('"')
+        .to_string()
+}
 
 /// Create a test file with known content.
 fn create_test_file(content: &str) -> NamedTempFile {
@@ -92,7 +106,11 @@ fn test_version_flag() {
     let stdout = String::from_utf8_lossy(&output.stdout);
 
     assert!(stdout.contains("sel"));
-    assert!(stdout.contains("0.1"));
+    let expected = package_version_from_manifest();
+    assert!(
+        stdout.contains(&expected),
+        "expected version {expected} in: {stdout}"
+    );
 }
 
 #[test]

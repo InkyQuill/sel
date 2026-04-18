@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "sel")]
 #[command(author = "InkyQuill")]
-#[command(version = "0.1.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Select slices from text files", long_about = None)]
 #[command(
     long_about = "Extract fragments from text files by line numbers, ranges, positions (line:column), or regex patterns.
@@ -45,6 +45,10 @@ pub struct Cli {
     #[arg(short = 'e', long = "regex", value_name = "PATTERN")]
     pub regex: Option<String>,
 
+    /// Invert the regex match: emit lines that do NOT match -e.
+    #[arg(short = 'v', long = "invert-match")]
+    pub invert: bool,
+
     /// Always print filename prefix
     ///
     /// By default, filename is only shown when processing multiple files.
@@ -57,6 +61,14 @@ pub struct Cli {
     #[arg(long = "color", value_name = "WHEN")]
     pub color: Option<String>,
 
+    /// Write output to FILE instead of stdout. Use `-` for stdout explicitly.
+    #[arg(short = 'o', long = "output", value_name = "FILE")]
+    pub output: Option<String>,
+
+    /// With `-o`, overwrite an existing file.
+    #[arg(long = "force")]
+    pub force: bool,
+
     /// Selector and/or file(s)
     ///
     /// The first positional argument can be:
@@ -64,7 +76,7 @@ pub struct Cli {
     /// - A filename otherwise
     ///
     /// When using -e, all positional arguments are treated as files.
-    #[arg(value_name = "SELECTOR_OR_FILE", required = true)]
+    #[arg(value_name = "SELECTOR_OR_FILE")]
     pub args: Vec<String>,
 }
 
@@ -96,9 +108,12 @@ impl Cli {
     }
 
     /// Get the list of input files.
+    ///
+    /// Returns at least one entry — falls back to `-` (stdin) when no
+    /// explicit files are provided.
     pub fn get_files(&self) -> Vec<PathBuf> {
         if self.args.is_empty() {
-            return Vec::new();
+            return vec![PathBuf::from("-")];
         }
 
         // If using regex mode, all args are files
@@ -113,11 +128,20 @@ impl Cli {
             0
         };
 
-        self.args[start..].iter().map(PathBuf::from).collect()
+        let files: Vec<_> = self.args[start..].iter().map(PathBuf::from).collect();
+        if files.is_empty() {
+            vec![PathBuf::from("-")]
+        } else {
+            files
+        }
     }
 
     /// Check if a string looks like a selector.
     fn looks_like_selector(&self, s: &str) -> bool {
+        // `-` is the stdin sentinel, not a selector.
+        if s == "-" {
+            return false;
+        }
         // Empty string is not a selector
         if s.is_empty() {
             return false;
@@ -164,15 +188,9 @@ impl Cli {
 
     /// Validate CLI arguments and check for conflicts.
     pub fn validate(&self) -> crate::Result<()> {
-        // Check if we have files
-        let files = self.get_files();
-        if files.is_empty() {
-            return Err(crate::SelError::Message(
-                "No input files specified".to_string(),
-            ));
+        if self.invert && self.regex.is_none() {
+            return Err(crate::SelError::InvertWithoutRegex);
         }
-
-        // Check if -n is used without positional selector or -e
         if self.char_context.is_some()
             && self.regex.is_none()
             && !self
@@ -180,7 +198,7 @@ impl Cli {
                 .as_ref()
                 .is_some_and(|s| s.contains(':'))
         {
-            return Err(crate::SelError::CharContextWithoutPosition);
+            return Err(crate::SelError::CharContextWithoutTarget);
         }
 
         Ok(())
@@ -201,6 +219,153 @@ impl Cli {
             }
             Some(_) => ColorMode::Never, // Invalid value, default to never
         }
+    }
+}
+
+use crate::app::{NonSeek, Seek, Stage1};
+use crate::context::{LineContext, NoContext};
+use crate::format::{FormatOpts, FragmentFormatter, PlainFormatter};
+use crate::matcher::{AllMatcher, LineMatcher, PositionMatcher, RegexMatcher};
+use crate::sink::{FileSink, StdoutSink};
+use crate::source::{FileSource, Source, StdinSource};
+use crate::{App, Selector};
+
+impl Cli {
+    /// Construct the output sink based on `--output`/`--force` flags.
+    fn make_sink(&self) -> crate::Result<Box<dyn crate::sink::Sink>> {
+        match self.output.as_deref() {
+            None | Some("-") => Ok(Box::new(StdoutSink::new())),
+            Some(path) => {
+                let sink = FileSink::create(std::path::Path::new(path), self.force)?;
+                Ok(Box::new(sink))
+            }
+        }
+    }
+
+    /// Resolve `--color` against whether the sink is a terminal.
+    fn resolve_color(&self, to_terminal: bool) -> bool {
+        match self.color.as_deref() {
+            Some("always") => true,
+            Some("never") => false,
+            _ => to_terminal,
+        }
+    }
+
+    /// Build a ready-to-run `App` for a single file.
+    ///
+    /// Callers iterate over `get_files()` and build one `App` per file.
+    pub fn into_app_for_file(
+        &self,
+        path: &std::path::Path,
+        show_filename: bool,
+    ) -> crate::Result<App<Seek>> {
+        let source = FileSource::open(path)?;
+        let filename = if show_filename {
+            Some(source.label().to_string())
+        } else {
+            None
+        };
+        let sink = self.make_sink()?;
+        let color = self.resolve_color(sink.is_terminal());
+        let opts = FormatOpts {
+            show_line_numbers: !self.no_line_numbers,
+            show_filename,
+            filename,
+            color,
+            // Target marker (`> `) only appears in context-aware output.
+            target_marker: matches!(self.context, Some(n) if n > 0),
+        };
+
+        // Matcher + seek stage.
+        let stage2 = Stage1::with_seekable_source(Box::new(source));
+        let stage3 = if let Some(pat) = &self.regex {
+            stage2.with_matcher(Box::new(RegexMatcher::new(pat, self.invert)?))
+        } else if let Some(raw) = self.get_selector() {
+            let sel = Selector::parse(&raw)?;
+            match sel {
+                Selector::All => stage2.with_matcher(Box::new(AllMatcher)),
+                Selector::LineNumbers(_) => {
+                    stage2.with_matcher(Box::new(LineMatcher::from_selector(&sel)))
+                }
+                Selector::Positions(_) => {
+                    stage2.with_position_matcher(PositionMatcher::from_selector(&sel))
+                }
+            }
+        } else {
+            stage2.with_matcher(Box::new(AllMatcher))
+        };
+
+        // Expander.
+        let stage4 = match self.context {
+            Some(n) if n > 0 => stage3.with_expander(Box::new(LineContext::new(n))),
+            _ => stage3.with_expander(Box::new(NoContext)),
+        };
+
+        // Formatter.
+        let stage5 = if let Some(n) = self.char_context {
+            stage4.with_formatter(Box::new(FragmentFormatter::new(opts, n)))
+        } else {
+            stage4.with_formatter(Box::new(PlainFormatter::new(opts)))
+        };
+
+        Ok(stage5.with_sink(sink))
+    }
+
+    /// Build a ready-to-run `App` for stdin input.
+    ///
+    /// Returns `PositionalWithStdin` when paired with a positional selector
+    /// (line:column), which requires a seekable source.
+    pub fn into_app_for_stdin(&self, show_filename: bool) -> crate::Result<App<NonSeek>> {
+        if let Some(raw) = self.get_selector()
+            && raw.contains(':')
+        {
+            return Err(crate::SelError::PositionalWithStdin);
+        }
+        let source = StdinSource::new();
+        let filename = if show_filename {
+            Some("-".to_string())
+        } else {
+            None
+        };
+        let sink = self.make_sink()?;
+        let color = self.resolve_color(sink.is_terminal());
+        let opts = FormatOpts {
+            show_line_numbers: !self.no_line_numbers,
+            show_filename,
+            filename,
+            color,
+            // Target marker (`> `) only appears in context-aware output.
+            target_marker: matches!(self.context, Some(n) if n > 0),
+        };
+
+        let stage2 = Stage1::with_nonseekable_source(Box::new(source));
+        let stage3 = if let Some(pat) = &self.regex {
+            stage2.with_matcher(Box::new(RegexMatcher::new(pat, self.invert)?))
+        } else if let Some(raw) = self.get_selector() {
+            let sel = Selector::parse(&raw)?;
+            match sel {
+                Selector::All => stage2.with_matcher(Box::new(AllMatcher)),
+                Selector::LineNumbers(_) => {
+                    stage2.with_matcher(Box::new(LineMatcher::from_selector(&sel)))
+                }
+                Selector::Positions(_) => return Err(crate::SelError::PositionalWithStdin),
+            }
+        } else {
+            stage2.with_matcher(Box::new(AllMatcher))
+        };
+
+        let stage4 = match self.context {
+            Some(n) if n > 0 => stage3.with_expander(Box::new(LineContext::new(n))),
+            _ => stage3.with_expander(Box::new(NoContext)),
+        };
+
+        let stage5 = if let Some(n) = self.char_context {
+            stage4.with_formatter(Box::new(FragmentFormatter::new(opts, n)))
+        } else {
+            stage4.with_formatter(Box::new(PlainFormatter::new(opts)))
+        };
+
+        Ok(stage5.with_sink(sink))
     }
 }
 
