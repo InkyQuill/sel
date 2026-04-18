@@ -45,6 +45,10 @@ pub struct Cli {
     #[arg(short = 'e', long = "regex", value_name = "PATTERN")]
     pub regex: Option<String>,
 
+    /// Invert the regex match: emit lines that do NOT match -e.
+    #[arg(short = 'v', long = "invert-match")]
+    pub invert: bool,
+
     /// Always print filename prefix
     ///
     /// By default, filename is only shown when processing multiple files.
@@ -184,6 +188,9 @@ impl Cli {
 
     /// Validate CLI arguments and check for conflicts.
     pub fn validate(&self) -> crate::Result<()> {
+        if self.invert && self.regex.is_none() {
+            return Err(crate::SelError::InvertWithoutRegex);
+        }
         if self.char_context.is_some()
             && self.regex.is_none()
             && !self
@@ -272,7 +279,7 @@ impl Cli {
         // Matcher + seek stage.
         let stage2 = Stage1::with_seekable_source(Box::new(source));
         let stage3 = if let Some(pat) = &self.regex {
-            stage2.with_matcher(Box::new(RegexMatcher::new(pat, false)?))
+            stage2.with_matcher(Box::new(RegexMatcher::new(pat, self.invert)?))
         } else if let Some(raw) = self.get_selector() {
             let sel = Selector::parse(&raw)?;
             match sel {
@@ -333,7 +340,7 @@ impl Cli {
 
         let stage2 = Stage1::with_nonseekable_source(Box::new(source));
         let stage3 = if let Some(pat) = &self.regex {
-            stage2.with_matcher(Box::new(RegexMatcher::new(pat, false)?))
+            stage2.with_matcher(Box::new(RegexMatcher::new(pat, self.invert)?))
         } else if let Some(raw) = self.get_selector() {
             let sel = Selector::parse(&raw)?;
             match sel {
