@@ -2,7 +2,7 @@
 
 **sel** is a Rust crate that exposes both a **`sel` binary** and a **library**
 with the same streaming pipeline. This document summarizes how pieces fit
-together; public types are documented in rustdoc on [docs.rs/sel](https://docs.rs/sel).
+together; public types are documented in rustdoc on [docs.rs/sel-rs](https://docs.rs/sel-rs).
 
 ## High-level data flow
 

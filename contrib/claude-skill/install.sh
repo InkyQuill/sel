@@ -202,5 +202,5 @@ printf '  source: %s\n' "$source_label"
 if ! command -v sel >/dev/null 2>&1; then
     printf '\nNote: `sel` is not on your PATH. The skill only activates when\n'
     printf '      `sel` is actually available. Install it with:\n'
-    printf '        cargo install sel\n'
+    printf '        cargo install sel-rs\n'
 fi

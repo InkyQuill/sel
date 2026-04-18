@@ -1,8 +1,8 @@
 # sel — Select Slices from Text Files
 
 [![CI](https://github.com/InkyQuill/sel/actions/workflows/ci.yml/badge.svg)](https://github.com/InkyQuill/sel/actions/workflows/ci.yml)
-[![Crates.io](https://img.shields.io/crates/v/sel.svg)](https://crates.io/crates/sel)
-[![docs.rs](https://docs.rs/sel/badge.svg)](https://docs.rs/sel)
+[![Crates.io](https://img.shields.io/crates/v/sel-rs.svg)](https://crates.io/crates/sel-rs)
+[![docs.rs](https://docs.rs/sel-rs/badge.svg)](https://docs.rs/sel-rs)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
 
 **0.2.0** — compact CLI (and Rust library) for extracting fragments from
@@ -20,7 +20,7 @@ output with context.
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Build, test, PR workflow |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | Community Code of Conduct |
 | [CHANGELOG.md](CHANGELOG.md) | Release notes |
-| [docs.rs/sel](https://docs.rs/sel) | Rust API reference |
+| [docs.rs/sel-rs](https://docs.rs/sel-rs) | Rust API reference |
 
 ## Features
 
@@ -36,8 +36,8 @@ output with context.
 ## Installation
 
 ```bash
-# From crates.io
-cargo install sel
+# From crates.io (the crate is published as `sel-rs`; the binary is still `sel`)
+cargo install sel-rs
 
 # From source
 git clone https://github.com/InkyQuill/sel.git

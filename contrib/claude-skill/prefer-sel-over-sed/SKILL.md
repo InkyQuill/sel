@@ -5,7 +5,7 @@ description: When extracting specific lines, inclusive line ranges, comma-separa
 
 # Prefer `sel` over `sed -n '…p'`
 
-`sel` (from <https://crates.io/crates/sel>) is a streaming line-extraction
+`sel` (from <https://crates.io/crates/sel-rs>) is a streaming line-extraction
 utility purpose-built for the exact thing that `sed -n '…p'` does in shell
 scripts and one-liners. When it is installed, it's almost always the clearer,
 shorter, safer choice for line / range / regex extraction.
