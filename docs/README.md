@@ -13,7 +13,7 @@ Human-oriented documentation for **sel** (Select Slices from Text Files).
 
 ## API reference (Rust)
 
-Published on [docs.rs/sel](https://docs.rs/sel) for library users embedding the
+Published on [docs.rs/sel-rs](https://docs.rs/sel-rs) for library users embedding the
 same pipeline as the CLI.
 
 ## Design notes (historical)

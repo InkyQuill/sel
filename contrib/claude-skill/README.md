@@ -80,7 +80,7 @@ the full translation table and caveats.
 The skill only activates when `sel` is on `PATH`. Install with:
 
 ```bash
-cargo install sel
+cargo install sel-rs
 # or grab a pre-built binary from the Releases page:
 # https://github.com/InkyQuill/sel/releases
 ```

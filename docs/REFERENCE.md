@@ -5,7 +5,7 @@
 > replaces, the short user-facing docs:
 > [`README.md`](../README.md), [`USAGE.md`](USAGE.md),
 > [`ARCHITECTURE.md`](ARCHITECTURE.md), and the rustdoc on
-> [docs.rs/sel](https://docs.rs/sel).
+> [docs.rs/sel-rs](https://docs.rs/sel-rs).
 
 - **Package**: `sel`
 - **Version documented**: 0.2.0
@@ -1194,7 +1194,7 @@ Suggested traversals for different audiences.
 
 1. Section [14](#14-library-api--embedding) of this file.
 2. [`src/lib.rs`](../src/lib.rs) — the full re-export surface.
-3. rustdoc on [docs.rs/sel](https://docs.rs/sel).
+3. rustdoc on [docs.rs/sel-rs](https://docs.rs/sel-rs).
 4. Section [15](#15-extension-points) when adding a custom stage.
 
 ### For an architect reviewing the design

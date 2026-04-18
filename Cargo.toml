@@ -1,10 +1,10 @@
 [package]
-name = "sel"
+name = "sel-rs"
 version = "0.2.0"
 description = "Select slices from text files by line numbers, ranges, positions, or regex"
 repository = "https://github.com/InkyQuill/sel"
 homepage = "https://github.com/InkyQuill/sel"
-documentation = "https://docs.rs/sel"
+documentation = "https://docs.rs/sel-rs"
 readme = "README.md"
 license = "MIT OR Apache-2.0"
 authors = ["InkyQuill <inkyquill@users.noreply.github.com>"]
@@ -44,6 +44,14 @@ panic = "abort"
 [profile.dist]
 inherits = "release"
 lto = "thin"
+
+# The crate is published to crates.io as `sel-rs` (the short name was
+# already taken by an unrelated, abandoned 2019 crate). Override both the
+# library and the binary names so end users still write `use sel::...` and
+# still run `sel` at the shell.
+[lib]
+name = "sel"
+path = "src/lib.rs"
 
 [[bin]]
 name = "sel"
