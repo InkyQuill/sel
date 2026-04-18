@@ -17,6 +17,13 @@ name: Release
 permissions:
   "contents": "write"
 
+env:
+  # Opt JS actions into Node 24 now; Node 20 is deprecated on the runner
+  # image with final removal in September 2026. actions/upload-artifact@v5
+  # and download-artifact@v5 are still on Node 20 as of April 2026.
+  # https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 # This task will run whenever you push a git tag that looks like a version
 # like "1.0.0", "v0.1.0-prerelease.1", "my-app/0.1.0", "releases/v1.0.0", etc.
 # Various formats will be parsed into a VERSION and an optional PACKAGE_NAME, where
