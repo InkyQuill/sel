@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(name = "sel")]
 #[command(author = "InkyQuill")]
-#[command(version = "0.1.0")]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 #[command(about = "Select slices from text files", long_about = None)]
 #[command(
     long_about = "Extract fragments from text files by line numbers, ranges, positions (line:column), or regex patterns.
