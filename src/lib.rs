@@ -4,6 +4,7 @@
 //! текстовых файлов по номерам строк, диапазонам, позициям или регулярным выражениям.
 
 pub mod cli;
+pub mod context;
 pub mod error;
 pub mod matcher;
 pub mod output;
@@ -12,6 +13,7 @@ pub mod selector;
 pub mod source;
 pub mod types;
 
+pub use context::{EmitOwned, Expander, LineContext, NoContext};
 pub use error::{Result, SelError};
 pub use matcher::{AllMatcher, LineMatcher, Matcher, PositionMatcher, RegexMatcher};
 pub use selector::{LineSpec, Position, Selector};
