@@ -8,6 +8,8 @@ pub mod error;
 pub mod output;
 pub mod reader;
 pub mod selector;
+pub mod types;
 
 pub use error::{Result, SelError};
 pub use selector::{LineSpec, Position, Selector};
+pub use types::{Emit, Line, MatchInfo, Role};
