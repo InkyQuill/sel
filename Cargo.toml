@@ -73,18 +73,20 @@ install-updater = false
 # crates.io publish job, which cargo-dist 0.22 doesn't natively support).
 allow-dirty = ["ci"]
 
-# Override cargo-dist 0.22.1's hard-coded matrix runners, all of which are
-# now retired GitHub runner images:
-#   ubuntu-20.04   -> retired April 2025
-#   macos-13       -> deprecated, scheduled for removal
-#   windows-2019   -> deprecated
-# Upgrading cargo-dist would regenerate these with modern defaults, but
-# until then we override per-target here. cargo-dist reads this table at
-# `cargo dist plan` time and emits it into the matrix that drives
-# build-local-artifacts in release.yml.
+# Override cargo-dist 0.22.1's hard-coded matrix runners. The upstream
+# defaults (ubuntu-20.04, macos-13, windows-2019) are all retired or
+# deprecated GitHub runner images, which caused the release matrix to
+# hang waiting for runners that no longer exist.
+#
+# Note aarch64-unknown-linux-gnu uses the native ARM runner
+# (`ubuntu-24.04-arm`) rather than cross-compiling from x86_64. cargo-dist
+# 0.22.1 emits no `packages_install` entry for that target, so without
+# gcc-aarch64-linux-gnu on the runner the cross-link fails with
+# "incompatible with elf64-x86-64". Building natively avoids the whole
+# class of toolchain mismatch.
 [workspace.metadata.dist.github-custom-runners]
 aarch64-apple-darwin = "macos-14"
 x86_64-apple-darwin = "macos-14"
-aarch64-unknown-linux-gnu = "ubuntu-24.04"
+aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
 x86_64-unknown-linux-gnu = "ubuntu-24.04"
 x86_64-pc-windows-msvc = "windows-2022"
