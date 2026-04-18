@@ -6,6 +6,7 @@
 pub mod cli;
 pub mod context;
 pub mod error;
+pub mod format;
 pub mod matcher;
 pub mod output;
 pub mod reader;
@@ -15,6 +16,7 @@ pub mod types;
 
 pub use context::{EmitOwned, Expander, LineContext, NoContext};
 pub use error::{Result, SelError};
+pub use format::{FormatOpts, Formatter, FragmentFormatter, PlainFormatter};
 pub use matcher::{AllMatcher, LineMatcher, Matcher, PositionMatcher, RegexMatcher};
 pub use selector::{LineSpec, Position, Selector};
 pub use types::{Emit, Line, MatchInfo, Role};
