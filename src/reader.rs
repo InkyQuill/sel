@@ -53,12 +53,9 @@ impl<R: Read> LineReader<R> {
 
 /// Open a file for reading.
 pub fn open_file(path: &Path) -> Result<std::fs::File> {
-    std::fs::File::open(path).map_err(|e| {
-        if e.kind() == std::io::ErrorKind::NotFound {
-            crate::error::SelError::FileNotFound(path.to_path_buf())
-        } else {
-            crate::error::SelError::from(e)
-        }
+    std::fs::File::open(path).map_err(|source| crate::error::SelError::Io {
+        path: path.display().to_string(),
+        source,
     })
 }
 

@@ -164,15 +164,12 @@ impl Cli {
 
     /// Validate CLI arguments and check for conflicts.
     pub fn validate(&self) -> crate::Result<()> {
-        // Check if we have files
-        let files = self.get_files();
-        if files.is_empty() {
-            return Err(crate::SelError::Message(
-                "No input files specified".to_string(),
+        if self.get_files().is_empty() {
+            return Err(crate::SelError::InvalidSelector(
+                "no input files specified".to_string(),
             ));
         }
 
-        // Check if -n is used without positional selector or -e
         if self.char_context.is_some()
             && self.regex.is_none()
             && !self
@@ -180,7 +177,7 @@ impl Cli {
                 .as_ref()
                 .is_some_and(|s| s.contains(':'))
         {
-            return Err(crate::SelError::CharContextWithoutPosition);
+            return Err(crate::SelError::CharContextWithoutTarget);
         }
 
         Ok(())

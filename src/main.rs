@@ -28,8 +28,8 @@ fn run(cli: Cli) -> sel::Result<()> {
     // Get files from CLI
     let files = cli.get_files();
     if files.is_empty() {
-        return Err(sel::SelError::Message(
-            "No input files specified".to_string(),
+        return Err(sel::SelError::InvalidSelector(
+            "no input files specified".to_string(),
         ));
     }
 
