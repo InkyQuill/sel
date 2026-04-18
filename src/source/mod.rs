@@ -1,8 +1,10 @@
 //! Input sources — iterators that yield `Line`s one at a time.
 
 pub mod file;
+pub mod stdin;
 
 pub use file::FileSource;
+pub use stdin::StdinSource;
 
 use crate::Line;
 use crate::Result;
