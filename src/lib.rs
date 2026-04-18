@@ -3,6 +3,7 @@
 //! `sel` — компактная консольная утилита для быстрого извлечения фрагментов
 //! текстовых файлов по номерам строк, диапазонам, позициям или регулярным выражениям.
 
+pub mod app;
 pub mod cli;
 pub mod context;
 pub mod error;
@@ -15,6 +16,7 @@ pub mod sink;
 pub mod source;
 pub mod types;
 
+pub use app::{App, Stage1};
 pub use context::{EmitOwned, Expander, LineContext, NoContext};
 pub use error::{Result, SelError};
 pub use format::{FormatOpts, Formatter, FragmentFormatter, PlainFormatter};
