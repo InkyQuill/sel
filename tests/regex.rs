@@ -4,6 +4,10 @@ use std::io::Write;
 use std::process::Command;
 use tempfile::NamedTempFile;
 
+fn sel_bin() -> Command {
+    Command::new(env!("CARGO_BIN_EXE_sel"))
+}
+
 /// Helper to run sel with arguments and return stdout.
 fn run_sel(args: &[&str]) -> String {
     let output = Command::new("cargo")
@@ -346,6 +350,48 @@ fn test_regex_with_filename_flag() {
     // With -H, filename should be shown even for single file
     let filename = file.path().file_name().unwrap().to_string_lossy();
     assert!(output.contains(filename.as_ref()));
+}
+
+#[test]
+fn test_byte_regex_highlight_invalid_utf8_does_not_panic() {
+    let mut file = NamedTempFile::new().unwrap();
+    file.write_all(&[0xff, b'\n']).unwrap();
+
+    let output = sel_bin()
+        .args([
+            "--color=always",
+            "-e",
+            "(?-u:.)",
+            file.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("\u{fffd}"));
+}
+
+#[test]
+fn test_byte_regex_fragment_highlight_invalid_utf8_does_not_panic() {
+    let mut file = NamedTempFile::new().unwrap();
+    file.write_all(&[0xff, b'\n']).unwrap();
+
+    let output = sel_bin()
+        .args([
+            "--color=always",
+            "-n",
+            "1",
+            "-e",
+            "(?-u:.)",
+            file.path().to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\u{fffd}"));
+    assert!(stdout.contains('^'));
 }
 
 #[test]

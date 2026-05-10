@@ -54,3 +54,7 @@ impl FormatOpts {
 pub fn digits(n: u64) -> usize {
     n.to_string().len()
 }
+
+fn push_lossy(out: &mut String, bytes: &[u8]) {
+    out.push_str(&String::from_utf8_lossy(bytes));
+}

@@ -1,6 +1,6 @@
 //! Plain-line formatter with optional line number, filename, and highlight.
 
-use super::{FormatOpts, Formatter, ansi};
+use super::{FormatOpts, Formatter, ansi, push_lossy};
 use crate::{Emit, Role};
 use std::io::{self, Write};
 use std::ops::Range;
@@ -15,28 +15,26 @@ impl PlainFormatter {
     }
 
     fn render_content(&self, bytes: &[u8], spans: &[Range<usize>]) -> String {
-        let text = String::from_utf8_lossy(bytes);
         if !self.opts.color || spans.is_empty() {
-            return text.to_string();
+            return String::from_utf8_lossy(bytes).to_string();
         }
         let mut sorted = spans.to_vec();
         sorted.sort_by_key(|r| r.start);
         let mut out = String::new();
         let mut cursor = 0usize;
-        let t: &str = text.as_ref();
         for r in sorted {
-            let s = r.start.min(t.len());
-            let e = r.end.min(t.len());
+            let s = r.start.min(bytes.len());
+            let e = r.end.min(bytes.len());
             if s < cursor {
                 continue;
             }
-            out.push_str(&t[cursor..s]);
+            push_lossy(&mut out, &bytes[cursor..s]);
             out.push_str(ansi::INVERSE);
-            out.push_str(&t[s..e]);
+            push_lossy(&mut out, &bytes[s..e]);
             out.push_str(ansi::RESET);
             cursor = e;
         }
-        out.push_str(&t[cursor..]);
+        push_lossy(&mut out, &bytes[cursor..]);
         out
     }
 }

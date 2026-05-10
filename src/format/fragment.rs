@@ -2,7 +2,7 @@
 //!
 //! Used when `-n` is set (positional selectors or `-e` + `-n`).
 
-use super::{FormatOpts, Formatter, ansi};
+use super::{FormatOpts, Formatter, ansi, push_lossy};
 use crate::Emit;
 use std::io::{self, Write};
 
@@ -34,26 +34,30 @@ impl Formatter for FragmentFormatter {
         let start = col_idx.saturating_sub(self.char_context);
         let end = bytes.len().min(col_idx + self.char_context + 1);
 
-        let frag = String::from_utf8_lossy(&bytes[start..end]).to_string();
+        let frag_bytes = &bytes[start..end];
         let prefix = self.opts.prefix(emit.line.no);
 
         // Highlight the target span within the fragment if regex spans exist.
         let rendered = if let Some(span) = emit.match_info.spans.first() {
             if self.opts.color {
-                let hs = span.start.saturating_sub(start).min(frag.len());
-                let he = (span.end.saturating_sub(start)).min(frag.len());
+                let hs = span.start.max(start).min(end) - start;
+                let he = span.end.max(start).min(end) - start;
                 if hs < he {
-                    let (a, rest) = frag.split_at(hs);
-                    let (b, c) = rest.split_at(he - hs);
-                    format!("{a}{}{b}{}{c}", ansi::INVERSE, ansi::RESET)
+                    let mut out = String::new();
+                    push_lossy(&mut out, &frag_bytes[..hs]);
+                    out.push_str(ansi::INVERSE);
+                    push_lossy(&mut out, &frag_bytes[hs..he]);
+                    out.push_str(ansi::RESET);
+                    push_lossy(&mut out, &frag_bytes[he..]);
+                    out
                 } else {
-                    frag.clone()
+                    String::from_utf8_lossy(frag_bytes).to_string()
                 }
             } else {
-                frag.clone()
+                String::from_utf8_lossy(frag_bytes).to_string()
             }
         } else {
-            frag.clone()
+            String::from_utf8_lossy(frag_bytes).to_string()
         };
 
         writeln!(sink, "{prefix}{rendered}")?;
