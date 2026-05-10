@@ -20,16 +20,18 @@ impl RegexMatcher {
 
 impl Matcher for RegexMatcher {
     fn match_line(&mut self, line: &Line) -> MatchInfo {
-        let is_match = self.regex.is_match(&line.bytes);
-        let hit = is_match ^ self.invert;
-        // Inverted hits have nothing to highlight.
-        let spans = if hit && !self.invert {
+        let spans = if self.invert {
+            Vec::new()
+        } else {
             self.regex
                 .find_iter(&line.bytes)
                 .map(|m| m.start()..m.end())
                 .collect()
+        };
+        let hit = if self.invert {
+            !self.regex.is_match(&line.bytes)
         } else {
-            Vec::new()
+            !spans.is_empty()
         };
         MatchInfo {
             hit,

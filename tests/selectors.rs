@@ -53,9 +53,9 @@ fn test_single_line() {
     let file = create_test_file(&["line1", "line2", "line3"]);
     let output = run_sel(&["2", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("2:line2"));
-    assert!(!output.contains("1:line1"));
-    assert!(!output.contains("3:line3"));
+    assert!(output.contains("2: line2"));
+    assert!(!output.contains("1: line1"));
+    assert!(!output.contains("3: line3"));
 }
 
 #[test]
@@ -63,7 +63,7 @@ fn test_first_line() {
     let file = create_test_file(&["alpha", "beta", "gamma"]);
     let output = run_sel(&["1", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:alpha"));
+    assert!(output.contains("1: alpha"));
     assert!(!output.contains("beta"));
 }
 
@@ -72,7 +72,7 @@ fn test_last_line() {
     let file = create_test_file(&["first", "second", "third"]);
     let output = run_sel(&["3", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("3:third"));
+    assert!(output.contains("3: third"));
     assert!(!output.contains("first"));
 }
 
@@ -84,11 +84,11 @@ fn test_simple_range() {
     let lines: Vec<&str> = output.lines().collect();
     assert!(lines.len() >= 3);
 
-    assert!(output.contains("2:l2"));
-    assert!(output.contains("3:l3"));
-    assert!(output.contains("4:l4"));
-    assert!(!output.contains("1:l1"));
-    assert!(!output.contains("5:l5"));
+    assert!(output.contains("2: l2"));
+    assert!(output.contains("3: l3"));
+    assert!(output.contains("4: l4"));
+    assert!(!output.contains("1: l1"));
+    assert!(!output.contains("5: l5"));
 }
 
 #[test]
@@ -96,11 +96,11 @@ fn test_full_range() {
     let file = create_test_file(&["a", "b", "c", "d", "e"]);
     let output = run_sel(&["1-5", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:a"));
-    assert!(output.contains("2:b"));
-    assert!(output.contains("3:c"));
-    assert!(output.contains("4:d"));
-    assert!(output.contains("5:e"));
+    assert!(output.contains("1: a"));
+    assert!(output.contains("2: b"));
+    assert!(output.contains("3: c"));
+    assert!(output.contains("4: d"));
+    assert!(output.contains("5: e"));
 }
 
 #[test]
@@ -108,11 +108,11 @@ fn test_multiple_single_lines() {
     let file = create_test_file(&["line1", "line2", "line3", "line4", "line5"]);
     let output = run_sel(&["1,3,5", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:line1"));
-    assert!(output.contains("3:line3"));
-    assert!(output.contains("5:line5"));
-    assert!(!output.contains("2:line2"));
-    assert!(!output.contains("4:line4"));
+    assert!(output.contains("1: line1"));
+    assert!(output.contains("3: line3"));
+    assert!(output.contains("5: line5"));
+    assert!(!output.contains("2: line2"));
+    assert!(!output.contains("4: line4"));
 }
 
 #[test]
@@ -120,15 +120,15 @@ fn test_mixed_selector() {
     let file = create_test_file(&["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8", "l9", "l10"]);
     let output = run_sel(&["1,3-5,8", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:l1"));
-    assert!(output.contains("3:l3"));
-    assert!(output.contains("4:l4"));
-    assert!(output.contains("5:l5"));
-    assert!(output.contains("8:l8"));
+    assert!(output.contains("1: l1"));
+    assert!(output.contains("3: l3"));
+    assert!(output.contains("4: l4"));
+    assert!(output.contains("5: l5"));
+    assert!(output.contains("8: l8"));
 
-    assert!(!output.contains("2:l2"));
-    assert!(!output.contains("6:l6"));
-    assert!(!output.contains("7:l7"));
+    assert!(!output.contains("2: l2"));
+    assert!(!output.contains("6: l6"));
+    assert!(!output.contains("7: l7"));
 }
 
 #[test]
@@ -136,13 +136,13 @@ fn test_multiple_ranges() {
     let file = create_test_file(&["l1", "l2", "l3", "l4", "l5", "l6", "l7", "l8"]);
     let output = run_sel(&["1-2,5-6", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:l1"));
-    assert!(output.contains("2:l2"));
-    assert!(output.contains("5:l5"));
-    assert!(output.contains("6:l6"));
+    assert!(output.contains("1: l1"));
+    assert!(output.contains("2: l2"));
+    assert!(output.contains("5: l5"));
+    assert!(output.contains("6: l6"));
 
-    assert!(!output.contains("3:l3"));
-    assert!(!output.contains("4:l4"));
+    assert!(!output.contains("3: l3"));
+    assert!(!output.contains("4: l4"));
 }
 
 #[test]
@@ -153,13 +153,13 @@ fn test_complex_comma_selector() {
     ]);
     let output = run_sel(&["1,3-5,10,12-15", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:l1"));
-    assert!(output.contains("3:l3"));
-    assert!(output.contains("4:l4"));
-    assert!(output.contains("5:l5"));
-    assert!(output.contains("10:l10"));
-    assert!(output.contains("12:l12"));
-    assert!(output.contains("15:l15"));
+    assert!(output.contains("1: l1"));
+    assert!(output.contains("3: l3"));
+    assert!(output.contains("4: l4"));
+    assert!(output.contains("5: l5"));
+    assert!(output.contains("10: l10"));
+    assert!(output.contains("12: l12"));
+    assert!(output.contains("15: l15"));
 }
 
 #[test]
@@ -167,10 +167,10 @@ fn test_no_line_numbers_flag() {
     let file = create_test_file(&["line1", "line2", "line3"]);
     let output = run_sel(&["-l", "2", file.path().to_str().unwrap()]);
 
-    // Without -l, output would be "2:line2"
+    // Without -l, output would include a line-number prefix.
     // With -l, output should be just "line2"
     assert!(output.contains("line2"));
-    assert!(!output.contains("2:line2"));
+    assert!(!output.contains("2: line2"));
     assert!(!output.contains(":line2"));
 }
 
@@ -191,9 +191,9 @@ fn test_all_lines_no_selector() {
     let output = run_sel(&[file.path().to_str().unwrap()]);
 
     // When no selector is provided, all lines are output
-    assert!(output.contains("1:first"));
-    assert!(output.contains("2:second"));
-    assert!(output.contains("3:third"));
+    assert!(output.contains("1: first"));
+    assert!(output.contains("2: second"));
+    assert!(output.contains("3: third"));
 }
 
 #[test]
@@ -201,7 +201,7 @@ fn test_single_line_range() {
     let file = create_test_file(&["x", "y", "z"]);
     let output = run_sel(&["2-2", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("2:y"));
+    assert!(output.contains("2: y"));
     assert!(!output.contains("x"));
     assert!(!output.contains("z"));
 }
@@ -229,8 +229,8 @@ fn test_duplicate_line_numbers() {
     let output = run_sel(&["2,2,2", file.path().to_str().unwrap()]);
 
     // Should only show line 2 once
-    assert!(output.contains("2:b"));
-    let count = output.matches("2:b").count();
+    assert!(output.contains("2: b"));
+    let count = output.matches("2: b").count();
     assert_eq!(count, 1);
 }
 
@@ -240,16 +240,16 @@ fn test_overlapping_ranges() {
     let output = run_sel(&["1-4,3-6", file.path().to_str().unwrap()]);
 
     // All lines should appear, but without duplicates
-    assert!(output.contains("1:l1"));
-    assert!(output.contains("2:l2"));
-    assert!(output.contains("3:l3"));
-    assert!(output.contains("4:l4"));
-    assert!(output.contains("5:l5"));
-    assert!(output.contains("6:l6"));
+    assert!(output.contains("1: l1"));
+    assert!(output.contains("2: l2"));
+    assert!(output.contains("3: l3"));
+    assert!(output.contains("4: l4"));
+    assert!(output.contains("5: l5"));
+    assert!(output.contains("6: l6"));
 
     // Each line should appear only once
     for i in 1..=6 {
-        assert_eq!(output.matches(&format!("{}:l{}", i, i)).count(), 1);
+        assert_eq!(output.matches(&format!("{}: l{}", i, i)).count(), 1);
     }
 }
 
@@ -259,10 +259,10 @@ fn test_long_file() {
     let file = create_test_file(&lines.iter().map(|s| s.as_str()).collect::<Vec<_>>());
     let output = run_sel(&["50-55", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("50:line50"));
-    assert!(output.contains("55:line55"));
-    assert!(!output.contains("49:line49"));
-    assert!(!output.contains("56:line56"));
+    assert!(output.contains("50: line50"));
+    assert!(output.contains("55: line55"));
+    assert!(!output.contains("49: line49"));
+    assert!(!output.contains("56: line56"));
 }
 
 #[test]

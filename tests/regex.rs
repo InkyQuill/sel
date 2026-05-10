@@ -216,7 +216,7 @@ fn test_regex_with_no_line_numbers() {
     let output = run_sel(&["-e", "ERROR", "-l", file.path().to_str().unwrap()]);
 
     assert!(output.contains("ERROR: bad"));
-    assert!(!output.contains("1:ERROR"));
+    assert!(!output.contains("1: ERROR"));
     assert!(!output.contains("INFO: good"));
 }
 
@@ -268,10 +268,10 @@ fn test_regex_repetition_operators() {
     assert!(output.contains("aaa"));
     assert!(output.contains("aaaa"));
     // Note: "aaa" contains "aa" as substring, so we check line prefixes
-    assert!(output.contains("3:aaa") || output.contains("4:aaaa"));
-    assert!(!output.contains("1:a"));
-    assert!(!output.contains("2:aa"));
-    assert!(!output.contains("5:b"));
+    assert!(output.contains("3: aaa") || output.contains("4: aaaa"));
+    assert!(!output.contains("1: a"));
+    assert!(!output.contains("2: aa"));
+    assert!(!output.contains("5: b"));
 }
 
 #[test]

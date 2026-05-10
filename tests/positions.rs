@@ -46,7 +46,7 @@ fn test_simple_position() {
     let output = run_sel(&["2:5", file.path().to_str().unwrap()]);
 
     // Without -n, should output the full line
-    assert!(output.contains("2:line2"));
+    assert!(output.contains("2: line2"));
 }
 
 #[test]
@@ -54,7 +54,7 @@ fn test_position_first_column() {
     let file = create_test_file(&["hello world", "foo bar"]);
     let output = run_sel(&["1:1", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:hello world"));
+    assert!(output.contains("1: hello world"));
 }
 
 #[test]
@@ -62,7 +62,7 @@ fn test_position_last_column() {
     let file = create_test_file(&["abc"]);
     let output = run_sel(&["1:3", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:abc"));
+    assert!(output.contains("1: abc"));
 }
 
 #[test]
@@ -71,7 +71,7 @@ fn test_position_beyond_line_length() {
     let output = run_sel(&["1:100", file.path().to_str().unwrap()]);
 
     // Should still output the line
-    assert!(output.contains("1:short"));
+    assert!(output.contains("1: short"));
 }
 
 #[test]
@@ -79,7 +79,7 @@ fn test_position_at_line_start() {
     let file = create_test_file(&["  indented line", "normal"]);
     let output = run_sel(&["1:3", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:  indented line"));
+    assert!(output.contains("1:   indented line"));
 }
 
 #[test]
@@ -87,9 +87,9 @@ fn test_multiple_positions() {
     let file = create_test_file(&["line one", "line two", "line three"]);
     let output = run_sel(&["1:1,3:1", file.path().to_str().unwrap()]);
 
-    assert!(output.contains("1:line one"));
-    assert!(output.contains("3:line three"));
-    assert!(!output.contains("2:line two"));
+    assert!(output.contains("1: line one"));
+    assert!(output.contains("3: line three"));
+    assert!(!output.contains("2: line two"));
 }
 
 #[test]
@@ -98,7 +98,7 @@ fn test_multiple_positions_same_line() {
     let output = run_sel(&["1:1,1:5,1:10", file.path().to_str().unwrap()]);
 
     // Should output the line (without -n, full lines are shown)
-    assert!(output.contains("1:a very long line here"));
+    assert!(output.contains("1: a very long line here"));
 }
 
 #[test]

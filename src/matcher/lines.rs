@@ -8,6 +8,8 @@ use crate::{Line, MatchInfo};
 pub struct LineMatcher {
     /// Sorted, non-overlapping, inclusive `(start, end)` ranges (1-indexed).
     ranges: Vec<(u64, u64)>,
+    next_range: usize,
+    last_line_no: u64,
 }
 
 impl LineMatcher {
@@ -28,16 +30,31 @@ impl LineMatcher {
                 LineSpec::Range(a, b) => (*a as u64, *b as u64),
             })
             .collect();
-        Self { ranges }
+        Self {
+            ranges,
+            next_range: 0,
+            last_line_no: 0,
+        }
     }
 }
 
 impl Matcher for LineMatcher {
     fn match_line(&mut self, line: &Line) -> MatchInfo {
+        if line.no < self.last_line_no {
+            self.next_range = 0;
+        }
+        self.last_line_no = line.no;
+        while self
+            .ranges
+            .get(self.next_range)
+            .is_some_and(|&(_, end)| line.no > end)
+        {
+            self.next_range += 1;
+        }
         let hit = self
             .ranges
-            .iter()
-            .any(|&(a, b)| line.no >= a && line.no <= b);
+            .get(self.next_range)
+            .is_some_and(|&(start, end)| line.no >= start && line.no <= end);
         MatchInfo {
             hit,
             ..MatchInfo::default()

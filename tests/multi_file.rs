@@ -111,8 +111,8 @@ fn test_no_filename_prefix_single_file() {
 
     // Single file should not show filename by default
     let name = temp_file_name(&file1);
-    // Output should be "1:content1", not "filename:1:content1"
-    assert!(output.contains("1:content1"));
+    // Output should include the line prefix, not a filename prefix.
+    assert!(output.contains("1: content1"));
     // Unless filename is part of content
     if !output.contains(&name) {
         // Good - no filename prefix

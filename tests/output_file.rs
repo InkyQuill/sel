@@ -17,7 +17,7 @@ fn writes_to_output_file() {
         .status()
         .unwrap();
     assert!(status.success());
-    assert_eq!(std::fs::read_to_string(&output).unwrap(), "2:b\n");
+    assert_eq!(std::fs::read_to_string(&output).unwrap(), "   2: b\n");
 }
 
 #[test]
@@ -59,7 +59,7 @@ fn force_overwrites() {
         .status()
         .unwrap();
     assert!(status.success());
-    assert_eq!(std::fs::read_to_string(&output).unwrap(), "1:new\n");
+    assert_eq!(std::fs::read_to_string(&output).unwrap(), "   1: new\n");
 }
 
 #[test]
@@ -73,5 +73,35 @@ fn dash_output_is_stdout() {
         .output()
         .unwrap();
     assert!(out.status.success());
-    assert_eq!(String::from_utf8(out.stdout).unwrap(), "1:stdout\n");
+    assert_eq!(String::from_utf8(out.stdout).unwrap(), "   1: stdout\n");
+}
+
+#[test]
+fn output_file_collects_multiple_inputs_without_recreating_sink() {
+    let dir = tempdir().unwrap();
+    let input1 = dir.path().join("one.txt");
+    let input2 = dir.path().join("two.txt");
+    let output = dir.path().join("out.txt");
+    std::fs::write(&input1, "a1\na2\n").unwrap();
+    std::fs::write(&input2, "b1\nb2\n").unwrap();
+
+    let status = sel_bin()
+        .args([
+            "2",
+            input1.to_str().unwrap(),
+            input2.to_str().unwrap(),
+            "-o",
+            output.to_str().unwrap(),
+        ])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    assert_eq!(
+        std::fs::read_to_string(&output).unwrap(),
+        format!(
+            "{}:   2: a2\n{}:   2: b2\n",
+            input1.display(),
+            input2.display()
+        )
+    );
 }
