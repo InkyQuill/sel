@@ -224,15 +224,15 @@ impl Cli {
 
 use crate::app::{NonSeek, Seek, Stage1};
 use crate::context::{LineContext, NoContext};
-use crate::format::{FormatOpts, FragmentFormatter, PlainFormatter};
+use crate::format::{FormatOpts, FragmentFormatter, PlainFormatter, digits};
 use crate::matcher::{AllMatcher, LineMatcher, PositionMatcher, RegexMatcher};
-use crate::sink::{FileSink, StdoutSink};
+use crate::sink::{FileSink, Sink, StdoutSink};
 use crate::source::{FileSource, Source, StdinSource};
-use crate::{App, Selector};
+use crate::{App, LineSpec, Selector};
 
 impl Cli {
     /// Construct the output sink based on `--output`/`--force` flags.
-    fn make_sink(&self) -> crate::Result<Box<dyn crate::sink::Sink>> {
+    pub fn make_sink(&self) -> crate::Result<Box<dyn Sink>> {
         match self.output.as_deref() {
             None | Some("-") => Ok(Box::new(StdoutSink::new())),
             Some(path) => {
@@ -251,6 +251,43 @@ impl Cli {
         }
     }
 
+    fn line_number_width(&self) -> usize {
+        let Some(raw) = self.get_selector() else {
+            return 4;
+        };
+        let Ok(selector) = Selector::parse(&raw).map(|sel| sel.normalize()) else {
+            return 4;
+        };
+        let max_line = match selector {
+            Selector::All => None,
+            Selector::LineNumbers(specs) => specs
+                .into_iter()
+                .map(|spec| match spec {
+                    LineSpec::Single(n) | LineSpec::Range(_, n) => n,
+                })
+                .max(),
+            Selector::Positions(positions) => positions.into_iter().map(|pos| pos.line).max(),
+        };
+        max_line.map_or(4, |line| 4.max(digits(line as u64)))
+    }
+
+    fn format_opts(
+        &self,
+        show_filename: bool,
+        filename: Option<String>,
+        color: bool,
+    ) -> FormatOpts {
+        FormatOpts {
+            show_line_numbers: !self.no_line_numbers,
+            show_filename,
+            filename,
+            color,
+            // Target marker (`> `) only appears in context-aware output.
+            target_marker: matches!(self.context, Some(n) if n > 0),
+            line_number_width: self.line_number_width(),
+        }
+    }
+
     /// Build a ready-to-run `App` for a single file.
     ///
     /// Callers iterate over `get_files()` and build one `App` per file.
@@ -259,22 +296,24 @@ impl Cli {
         path: &std::path::Path,
         show_filename: bool,
     ) -> crate::Result<App<Seek>> {
+        let sink = self.make_sink()?;
+        self.into_app_for_file_with_sink(path, show_filename, sink)
+    }
+
+    pub fn into_app_for_file_with_sink(
+        &self,
+        path: &std::path::Path,
+        show_filename: bool,
+        sink: Box<dyn Sink>,
+    ) -> crate::Result<App<Seek>> {
         let source = FileSource::open(path)?;
         let filename = if show_filename {
             Some(source.label().to_string())
         } else {
             None
         };
-        let sink = self.make_sink()?;
         let color = self.resolve_color(sink.is_terminal());
-        let opts = FormatOpts {
-            show_line_numbers: !self.no_line_numbers,
-            show_filename,
-            filename,
-            color,
-            // Target marker (`> `) only appears in context-aware output.
-            target_marker: matches!(self.context, Some(n) if n > 0),
-        };
+        let opts = self.format_opts(show_filename, filename, color);
 
         // Matcher + seek stage.
         let stage2 = Stage1::with_seekable_source(Box::new(source));
@@ -316,6 +355,15 @@ impl Cli {
     /// Returns `PositionalWithStdin` when paired with a positional selector
     /// (line:column), which requires a seekable source.
     pub fn into_app_for_stdin(&self, show_filename: bool) -> crate::Result<App<NonSeek>> {
+        let sink = self.make_sink()?;
+        self.into_app_for_stdin_with_sink(show_filename, sink)
+    }
+
+    pub fn into_app_for_stdin_with_sink(
+        &self,
+        show_filename: bool,
+        sink: Box<dyn Sink>,
+    ) -> crate::Result<App<NonSeek>> {
         if let Some(raw) = self.get_selector()
             && raw.contains(':')
         {
@@ -327,16 +375,8 @@ impl Cli {
         } else {
             None
         };
-        let sink = self.make_sink()?;
         let color = self.resolve_color(sink.is_terminal());
-        let opts = FormatOpts {
-            show_line_numbers: !self.no_line_numbers,
-            show_filename,
-            filename,
-            color,
-            // Target marker (`> `) only appears in context-aware output.
-            target_marker: matches!(self.context, Some(n) if n > 0),
-        };
+        let opts = self.format_opts(show_filename, filename, color);
 
         let stage2 = Stage1::with_nonseekable_source(Box::new(source));
         let stage3 = if let Some(pat) = &self.regex {

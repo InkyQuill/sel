@@ -19,12 +19,16 @@ fn main() {
 fn run(cli: Cli) -> sel::Result<()> {
     let files = cli.get_files();
     let show_filename = cli.with_filename || files.len() > 1;
+    let mut sink = cli.make_sink()?;
     for path in &files {
-        if path.as_os_str() == "-" {
-            sel::pipeline::run(cli.into_app_for_stdin(show_filename)?)?;
+        let app_sink = sink;
+        sink = if path.as_os_str() == "-" {
+            let app = cli.into_app_for_stdin_with_sink(show_filename, app_sink)?;
+            sel::pipeline::run_unfinished(app)?
         } else {
-            sel::pipeline::run(cli.into_app_for_file(path, show_filename)?)?;
-        }
+            let app = cli.into_app_for_file_with_sink(path, show_filename, app_sink)?;
+            sel::pipeline::run_unfinished(app)?
+        };
     }
-    Ok(())
+    sel::pipeline::finish_sink(sink)
 }

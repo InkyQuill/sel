@@ -31,14 +31,14 @@ fn run_with_stdin(args: &[&str], stdin: &str) -> (String, String, i32) {
 fn no_args_reads_stdin_as_cat_n() {
     let (stdout, _, code) = run_with_stdin(&[], "alpha\nbeta\ngamma\n");
     assert_eq!(code, 0);
-    assert_eq!(stdout, "1:alpha\n2:beta\n3:gamma\n");
+    assert_eq!(stdout, "   1: alpha\n   2: beta\n   3: gamma\n");
 }
 
 #[test]
 fn dash_is_stdin() {
     let (stdout, _, code) = run_with_stdin(&["2", "-"], "one\ntwo\nthree\n");
     assert_eq!(code, 0);
-    assert_eq!(stdout, "2:two\n");
+    assert_eq!(stdout, "   2: two\n");
 }
 
 #[test]

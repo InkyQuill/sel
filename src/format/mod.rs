@@ -25,9 +25,14 @@ pub struct FormatOpts {
     /// Prepend `"> "` (colorized green) before target lines.
     /// Set `true` only when mixing target and context lines (i.e. `-c N`).
     pub target_marker: bool,
+    pub line_number_width: usize,
 }
 
 impl FormatOpts {
+    pub fn widen_for_line(&mut self, line_no: u64) {
+        self.line_number_width = self.line_number_width.max(digits(line_no));
+    }
+
     pub fn prefix(&self, line_no: u64) -> String {
         let mut p = String::new();
         if self.show_filename
@@ -37,9 +42,15 @@ impl FormatOpts {
             p.push(':');
         }
         if self.show_line_numbers {
-            p.push_str(&line_no.to_string());
-            p.push(':');
+            p.push_str(&format!(
+                "{line_no:>width$}: ",
+                width = self.line_number_width
+            ));
         }
         p
     }
+}
+
+pub fn digits(n: u64) -> usize {
+    n.to_string().len()
 }

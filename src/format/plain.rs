@@ -43,6 +43,7 @@ impl PlainFormatter {
 
 impl Formatter for PlainFormatter {
     fn write(&mut self, sink: &mut dyn Write, emit: &Emit) -> io::Result<()> {
+        self.opts.widen_for_line(emit.line.no);
         let marker = match emit.role {
             Role::Target if self.opts.target_marker => {
                 ansi::paint(self.opts.color, ansi::GREEN, ">") + " "
@@ -67,6 +68,7 @@ mod tests {
             filename: None,
             color,
             target_marker: true,
+            line_number_width: 4,
         }
     }
 
@@ -85,7 +87,7 @@ mod tests {
         let mut f = PlainFormatter::new(opts(false));
         let mut buf: Vec<u8> = Vec::new();
         f.write(&mut buf, &emit).unwrap();
-        assert_eq!(String::from_utf8(buf).unwrap(), "> 7:hello\n");
+        assert_eq!(String::from_utf8(buf).unwrap(), ">    7: hello\n");
     }
 
     #[test]
@@ -100,7 +102,46 @@ mod tests {
         let mut f = PlainFormatter::new(opts(false));
         let mut buf: Vec<u8> = Vec::new();
         f.write(&mut buf, &emit).unwrap();
-        assert_eq!(String::from_utf8(buf).unwrap(), "3:ctx\n");
+        assert_eq!(String::from_utf8(buf).unwrap(), "   3: ctx\n");
+    }
+
+    #[test]
+    fn filename_prefix_keeps_padded_line_number() {
+        let line = Line::new(7, b"hello".to_vec());
+        let mi = MatchInfo {
+            hit: true,
+            ..Default::default()
+        };
+        let emit = Emit {
+            line: &line,
+            role: Role::Target,
+            match_info: &mi,
+        };
+        let mut opts = opts(false);
+        opts.show_filename = true;
+        opts.filename = Some("input.txt".to_string());
+        let mut f = PlainFormatter::new(opts);
+        let mut buf: Vec<u8> = Vec::new();
+        f.write(&mut buf, &emit).unwrap();
+        assert_eq!(String::from_utf8(buf).unwrap(), "> input.txt:   7: hello\n");
+    }
+
+    #[test]
+    fn width_grows_for_large_line_numbers() {
+        let line = Line::new(10000, b"wide".to_vec());
+        let mi = MatchInfo {
+            hit: true,
+            ..Default::default()
+        };
+        let emit = Emit {
+            line: &line,
+            role: Role::Target,
+            match_info: &mi,
+        };
+        let mut f = PlainFormatter::new(opts(false));
+        let mut buf: Vec<u8> = Vec::new();
+        f.write(&mut buf, &emit).unwrap();
+        assert_eq!(String::from_utf8(buf).unwrap(), "> 10000: wide\n");
     }
 
     #[test]

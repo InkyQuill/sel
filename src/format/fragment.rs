@@ -19,6 +19,7 @@ impl FragmentFormatter {
 
 impl Formatter for FragmentFormatter {
     fn write(&mut self, sink: &mut dyn Write, emit: &Emit) -> io::Result<()> {
+        self.opts.widen_for_line(emit.line.no);
         // Target column: from position matcher (`col`), else start of first regex span.
         let target_col_1 = emit
             .match_info
@@ -84,11 +85,12 @@ mod tests {
             match_info: &mi,
         };
         let opts = FormatOpts {
-            show_line_numbers: false,
+            show_line_numbers: true,
             show_filename: false,
             filename: None,
             color: false,
             target_marker: false,
+            line_number_width: 4,
         };
         let mut f = FragmentFormatter::new(opts, 2);
         let mut buf: Vec<u8> = Vec::new();
@@ -96,6 +98,6 @@ mod tests {
         let s = String::from_utf8(buf).unwrap();
         // Fragment: col=5 with context=2 → bytes [2..7] = "cdefg"
         // Caret at col 5 → offset 2 in fragment
-        assert_eq!(s, "cdefg\n  ^\n");
+        assert_eq!(s, "   1: cdefg\n        ^\n");
     }
 }
