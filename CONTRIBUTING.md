@@ -66,8 +66,7 @@ tests/                 Black-box integration tests per feature
                        (selectors, regex, context, stdin, multi_file, …).
 
 benches/large_file.rs  Criterion micro-benchmarks for the streaming path.
-docs/                  User docs: README index, USAGE, ARCHITECTURE;
-                       superpowers/ holds optional design session notes.
+docs/                  User docs: README index, USAGE, ARCHITECTURE.
 ```
 
 See [`docs/README.md`](docs/README.md) for the full documentation index and

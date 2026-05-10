@@ -1127,7 +1127,6 @@ CONTRIBUTING.md            dev loop, test rules, release steps
 CODE_OF_CONDUCT.md         community standards
 LICENSE-MIT                MIT
 LICENSE-APACHE             Apache-2.0
-PLAN.md                    design notes (historical)
 
 src/main.rs                binary entry point (30 lines)
 src/lib.rs                 public re-exports

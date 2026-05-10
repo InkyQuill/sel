@@ -27,6 +27,7 @@ changelog_update = true
 git_release_enable = false   # cargo-dist creates the GitHub Release.
 git_tag_enable = true        # we need the tag to fire release.yml.
 publish = false              # cargo-dist publishes to crates.io.
+release_always = false       # tag only after the release PR is merged.
 semver_check = false         # skip cargo-semver-checks (optional, slow).
 
 [changelog]
