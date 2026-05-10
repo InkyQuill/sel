@@ -20,12 +20,6 @@ on:
   push:
     branches: [main]
 
-env:
-  # actions/upload-artifact@v5 and download-artifact@v5 still run on Node
-  # 20. Forcing Node 24 here silences the deprecation notice.
-  # https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 permissions:
   contents: read
 
@@ -38,6 +32,9 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+    concurrency:
+      group: release-plz-release-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - name: Checkout
         uses: actions/checkout@v5

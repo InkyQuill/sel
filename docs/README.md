@@ -15,8 +15,3 @@ Human-oriented documentation for **sel** (Select Slices from Text Files).
 
 Published on [docs.rs/sel-rs](https://docs.rs/sel-rs) for library users embedding the
 same pipeline as the CLI.
-
-## Design notes (historical)
-
-Under [superpowers/](superpowers/) — session plans and specs from v0.2 design work;
-they are optional background, not the canonical user manual.
