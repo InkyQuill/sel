@@ -1,6 +1,6 @@
 [package]
 name = "sel-rs"
-version = "0.2.1"
+version = "0.2.2"
 description = "Select slices from text files by line numbers, ranges, positions, or regex"
 repository = "https://github.com/InkyQuill/sel"
 homepage = "https://github.com/InkyQuill/sel"
